@@ -1,0 +1,14 @@
+#pragma once
+#include "sections.h"
+
+DEFINE_SECTION_SYMBOLS(patch_cardireadromwithcpu);
+
+extern "C" void patch_cardireadromwithcpu_entry();
+extern u16 patch_cardireadromwithcpu_return_offset;
+extern u16 patch_cardireadromwithcpu_mov_src_to_r0;
+extern u16 patch_cardireadromwithcpu_mov_dst_to_r1;
+extern u16 patch_cardireadromwithcpu_mov_actual_dst_to_r3;
+extern u16 patch_cardireadromwithcpu_mov_left_to_read_to_r2;
+extern u32 __patch_cardireadromwithcpu_fix_cp15_asm_address;
+extern u32 __patch_cardireadromwithcpu_rom_offset_to_sd_sector_asm_address;
+extern u32 __patch_cardireadromwithcpu_sdread_asm_address;
