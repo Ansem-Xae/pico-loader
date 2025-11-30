@@ -28,8 +28,6 @@
 #include "LoaderInfo.h"
 #include "jumpToArm9EntryPoint.h"
 
-typedef void (*entrypoint_t)(void);
-
 #define HANDSHAKE_PART0     0xA
 #define HANDSHAKE_PART1     0xB
 #define HANDSHAKE_PART2     0xC
