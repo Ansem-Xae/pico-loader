@@ -1,15 +1,8 @@
-name: Build Pico Loader
+name: Build Pico Loader release
 
 on:
-  push:
-    branches: ["develop"]
-    paths-ignore:
-      - 'README.md'
-  pull_request:
-    branches: ["develop"]
-    paths-ignore:
-      - 'README.md'
-  workflow_dispatch:
+  release:
+    types: [published]
 
 jobs:
   pico_loader:
@@ -44,6 +37,9 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.x
+      - name: Install zip
+        run:
+          apt-get update && apt-get -y install zip
       - name: Run build script
         run: |
           make PICO_PLATFORM=${{ matrix.platform }}
@@ -59,3 +55,11 @@ jobs:
             Pico_Loader_${{ matrix.platform }}
           # For some reason without explicitly setting a name there is some odd conflicts
           name: Pico_Loader_${{ matrix.platform }}
+      - name: Package for release
+        run: |
+          cd Pico_Loader_${{ matrix.platform }} && zip -r $PWD.zip *
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            Pico_Loader_${{ matrix.platform }}.zip
