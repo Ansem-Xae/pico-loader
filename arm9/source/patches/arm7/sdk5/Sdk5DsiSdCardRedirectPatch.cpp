@@ -6,6 +6,8 @@
 static const u32 sAttachFunctionPattern[] = { 0xE92D4018u, 0xE24DDF5Du, 0xE24DDB01u, 0xE59FE050u };
 static const u32 sAttachFunctionPatternThumb[] = { 0xB0FFB518u, 0xB0DFB0FFu, 0x4A0E490Du, 0x64CA4469u };
 
+#define BL_TO_GET_DRIVE_STRUCT_OFFSET   (-0x20)
+
 bool Sdk5DsiSdCardRedirectPatch::FindPatchTarget(PatchContext& patchContext)
 {
     _attachFunction = patchContext.FindPattern32Twl(sAttachFunctionPattern, sizeof(sAttachFunctionPattern));
@@ -20,6 +22,11 @@ bool Sdk5DsiSdCardRedirectPatch::FindPatchTarget(PatchContext& patchContext)
     if (_attachFunction)
     {
         LOG_DEBUG("Found FATFSi_sdmcRtfsAttach at %p\n", _attachFunction);
+        if (!_thumb && (*(u32*)((u8*)_attachFunction + BL_TO_GET_DRIVE_STRUCT_OFFSET) >> 24) != 0xEB)
+        {
+            LOG_WARNING("Unsupported arm7 version for SD redirection patches\n");
+            _attachFunction = nullptr;
+        }
     }
     else
     {
@@ -50,11 +57,11 @@ void Sdk5DsiSdCardRedirectPatch::ApplyPatch(PatchContext& patchContext)
     u32 getDriveStructAddress;
     if (_thumb)
     {
-        getDriveStructAddress = getThumbBlAddress((u32*)((u8*)_attachFunction - 0x20));
+        getDriveStructAddress = getThumbBlAddress((u32*)((u8*)_attachFunction + BL_TO_GET_DRIVE_STRUCT_OFFSET));
     }
     else
     {
-        getDriveStructAddress = getArmBlAddress((u32*)((u8*)_attachFunction - 0x20));
+        getDriveStructAddress = getArmBlAddress((u32*)((u8*)_attachFunction + BL_TO_GET_DRIVE_STRUCT_OFFSET));
     }
 
     auto sdRead = patchContext.GetLoaderPlatform()->CreateSdReadPatchCode(
