@@ -10,5 +10,6 @@ public:
 
 private:
     u32* _attachFunction = nullptr;
+    s16 _blToGetDriveStructOffset = 0;
     u16 _thumb = false;
 };

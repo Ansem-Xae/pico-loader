@@ -1,4 +1,7 @@
 #include "common.h"
+#include "sharedMemory.h"
+#include "ndsHeader.h"
+#include "moduleParams.h"
 #include "patches/platform/LoaderPlatform.h"
 #include "Sdk5DsiSdCardRedirectPatchAsm.h"
 #include "Sdk5DsiSdCardRedirectPatch.h"
@@ -6,7 +9,13 @@
 static const u32 sAttachFunctionPattern[] = { 0xE92D4018u, 0xE24DDF5Du, 0xE24DDB01u, 0xE59FE050u };
 static const u32 sAttachFunctionPatternThumb[] = { 0xB0FFB518u, 0xB0DFB0FFu, 0x4A0E490Du, 0x64CA4469u };
 
-#define BL_TO_GET_DRIVE_STRUCT_OFFSET   (-0x20)
+#define BL_TO_GET_DRIVE_STRUCT_OFFSET       (-0x20)
+#define BL_TO_GET_DRIVE_STRUCT_OFFSET_ALT   0x88
+
+static bool isArmUnconditionalBl(u32 armInstruction)
+{
+    return (armInstruction >> 24) == 0xEB;
+}
 
 bool Sdk5DsiSdCardRedirectPatch::FindPatchTarget(PatchContext& patchContext)
 {
@@ -22,10 +31,15 @@ bool Sdk5DsiSdCardRedirectPatch::FindPatchTarget(PatchContext& patchContext)
     if (_attachFunction)
     {
         LOG_DEBUG("Found FATFSi_sdmcRtfsAttach at %p\n", _attachFunction);
-        if (!_thumb && (*(u32*)((u8*)_attachFunction + BL_TO_GET_DRIVE_STRUCT_OFFSET) >> 24) != 0xEB)
+        _blToGetDriveStructOffset = BL_TO_GET_DRIVE_STRUCT_OFFSET;
+        if (!_thumb && !isArmUnconditionalBl(*(u32*)((u8*)_attachFunction + _blToGetDriveStructOffset)))
         {
-            LOG_WARNING("Unsupported arm7 version for SD redirection patches\n");
-            _attachFunction = nullptr;
+            _blToGetDriveStructOffset = BL_TO_GET_DRIVE_STRUCT_OFFSET_ALT;
+            if (!isArmUnconditionalBl(*(u32*)((u8*)_attachFunction + _blToGetDriveStructOffset)))
+            {
+                LOG_WARNING("Unsupported arm7 version for SD redirection patches\n");
+                _attachFunction = nullptr;
+            }
         }
     }
     else
@@ -49,6 +63,29 @@ static u32 getThumbBlAddress(const u32* instructionPointer)
     return (u32)instructionPointer + 5 + ((int)((((blInstruction1 & 0x7FF) << 11) | (blInstruction2 & 0x7FF)) << 10) >> 9);
 }
 
+static u32 correctAddressForArm7iAutoLoad(u32 address)
+{
+    auto romHeader = (const nds_header_twl_t*)TWL_SHARED_MEMORY->twlRomHeader;
+    auto arm7iModuleParams = (const module_params_twl_t*)(
+        romHeader->ntrHeader.arm7LoadAddress + romHeader->arm7iModuleParamsAddress);
+
+    auto autoLoadListEntry = (autoload_list_entry_sdk5_t*)arm7iModuleParams->autoloadListStart;
+    u32 currentAddress = arm7iModuleParams->autoloadStart;
+    while (autoLoadListEntry != (autoload_list_entry_sdk5_t*)arm7iModuleParams->autoloadListEnd)
+    {
+        if (address >= currentAddress && address < currentAddress + autoLoadListEntry->size)
+        {
+            address -= currentAddress;
+            address += autoLoadListEntry->targetAddress;
+            break;
+        }
+        currentAddress += autoLoadListEntry->size;
+        autoLoadListEntry++;
+    }
+
+    return address;
+}
+
 void Sdk5DsiSdCardRedirectPatch::ApplyPatch(PatchContext& patchContext)
 {
     if (!_attachFunction)
@@ -57,12 +94,14 @@ void Sdk5DsiSdCardRedirectPatch::ApplyPatch(PatchContext& patchContext)
     u32 getDriveStructAddress;
     if (_thumb)
     {
-        getDriveStructAddress = getThumbBlAddress((u32*)((u8*)_attachFunction + BL_TO_GET_DRIVE_STRUCT_OFFSET));
+        getDriveStructAddress = getThumbBlAddress((u32*)((u8*)_attachFunction + _blToGetDriveStructOffset));
     }
     else
     {
-        getDriveStructAddress = getArmBlAddress((u32*)((u8*)_attachFunction + BL_TO_GET_DRIVE_STRUCT_OFFSET));
+        getDriveStructAddress = getArmBlAddress((u32*)((u8*)_attachFunction + _blToGetDriveStructOffset));
     }
+
+    getDriveStructAddress = correctAddressForArm7iAutoLoad(getDriveStructAddress);
 
     auto sdRead = patchContext.GetLoaderPlatform()->CreateSdReadPatchCode(
         patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap());
