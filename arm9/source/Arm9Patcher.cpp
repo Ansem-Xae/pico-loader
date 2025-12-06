@@ -14,8 +14,7 @@
 #include "patches/arm9/PokemonDownloaderArm9Patch.h"
 #include "patches/arm9/OverlayPatches/FsStartOverlayHookPatch.h"
 #include "patches/arm9/OverlayPatches/DSProtectPatches/DSProtectOverlayPatch.h"
-#include "patches/arm9/OverlayPatches/PokemonBw1/PokemonBw1IrApPatch.h"
-#include "patches/arm9/OverlayPatches/PokemonBw2/PokemonBw2IrApPatch.h"
+#include "patches/arm9/OverlayPatches/PokemonIr/PokemonIrApPatch.h"
 #include "patches/arm9/OverlayPatches/GoldenSunDarkDawn/GoldenSunDarkDawnOverlayHookPatch.h"
 #include "SecureSysCallsUnusedSpaceLocator.h"
 #include "fastSearch.h"
@@ -234,6 +233,25 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
             }
             switch (romHeader->gameCode)
             {
+                // Pokemon HeartGold & SoulSilver
+                case GAMECODE("IPGD"):
+                case GAMECODE("IPGE"):
+                case GAMECODE("IPGF"):
+                case GAMECODE("IPGI"):
+                case GAMECODE("IPGJ"):
+                case GAMECODE("IPGK"):
+                case GAMECODE("IPGS"):
+                case GAMECODE("IPKD"):
+                case GAMECODE("IPKE"):
+                case GAMECODE("IPKF"):
+                case GAMECODE("IPKI"):
+                case GAMECODE("IPKJ"):
+                case GAMECODE("IPKK"):
+                case GAMECODE("IPKS"):
+                {
+                    overlayHookPatch->AddOverlayPatch(new PokemonIrApPatch(PokemonIrVersion::Hgss));
+                    break;
+                }
                 // Pokemon Black & White
                 case GAMECODE("IRAD"):
                 case GAMECODE("IRAF"):
@@ -250,25 +268,26 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
                 case GAMECODE("IRBO"):
                 case GAMECODE("IRBS"):
                 {
-                    overlayHookPatch->AddOverlayPatch(new PokemonBw1IrApPatch());
+                    overlayHookPatch->AddOverlayPatch(new PokemonIrApPatch(PokemonIrVersion::Bw1));
                     break;
                 }
                 // Pokemon Black & White 2
-                // todo: IRDJ and IREJ have two revisions and the first one seems to be different
                 case GAMECODE("IRDD"):
                 case GAMECODE("IRDF"):
                 case GAMECODE("IRDI"):
+                case GAMECODE("IRDJ"):
                 case GAMECODE("IRDK"):
                 case GAMECODE("IRDO"):
                 case GAMECODE("IRDS"):
                 case GAMECODE("IRED"):
                 case GAMECODE("IREF"):
                 case GAMECODE("IREI"):
+                case GAMECODE("IREJ"):
                 case GAMECODE("IREK"):
                 case GAMECODE("IREO"):
                 case GAMECODE("IRES"):
                 {
-                    overlayHookPatch->AddOverlayPatch(new PokemonBw2IrApPatch());
+                    overlayHookPatch->AddOverlayPatch(new PokemonIrApPatch(PokemonIrVersion::Bw2));
                     break;
                 }
             }
