@@ -272,16 +272,17 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
                     break;
                 }
                 // Pokemon Black & White 2
-                // todo: IRDJ and IREJ have two revisions and the first one seems to be different
                 case GAMECODE("IRDD"):
                 case GAMECODE("IRDF"):
                 case GAMECODE("IRDI"):
+                case GAMECODE("IRDJ"):
                 case GAMECODE("IRDK"):
                 case GAMECODE("IRDO"):
                 case GAMECODE("IRDS"):
                 case GAMECODE("IRED"):
                 case GAMECODE("IREF"):
                 case GAMECODE("IREI"):
+                case GAMECODE("IREJ"):
                 case GAMECODE("IREK"):
                 case GAMECODE("IREO"):
                 case GAMECODE("IRES"):
