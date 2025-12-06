@@ -67,7 +67,7 @@ static u32 correctAddressForArm7iAutoLoad(u32 address)
 {
     auto romHeader = (const nds_header_twl_t*)TWL_SHARED_MEMORY->twlRomHeader;
     auto arm7iModuleParams = (const module_params_twl_t*)(
-        romHeader->ntrHeader.arm7LoadAddress + romHeader->arm7iModuleParamsAddress);
+        romHeader->arm7LoadAddress + romHeader->arm7iModuleParamsAddress);
 
     auto autoLoadListEntry = (autoload_list_entry_sdk5_t*)arm7iModuleParams->autoloadListStart;
     u32 currentAddress = arm7iModuleParams->autoloadStart;

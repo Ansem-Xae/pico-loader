@@ -153,14 +153,13 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
             }
             else
             {
-                SecureSysCallsUnusedSpaceLocator secureSysCallsUnusedSpaceLocator;
-                secureSysCallsUnusedSpaceLocator.FindUnusedSpace(romHeader, patchContext.GetPatchHeap());
+                SecureSysCallsUnusedSpaceLocator().FindUnusedSpace(romHeader, patchContext.GetPatchHeap());
             }
         }
 
         if (sdkVersion.IsTwlSdk())
         {
-            if (!(romHeader->IsTwlRom() && twlRomHeader->IsDsiWare()))
+            if (!twlRomHeader->IsDsiWare())
             {
                 // if ((romHeader->unitCode & 3) != 3)
                 {
@@ -168,7 +167,7 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
                 }
                 patchCollection.AddPatch(new CardiReadRomWithCpuPatch());
 
-                if (gIsDsiMode && (romHeader->unitCode & 2))
+                if (gIsDsiMode && romHeader->IsTwlRom())
                 {
                     patchCollection.AddPatch(new CardiReadCardWithHashInternalAsyncPatch());
                 }

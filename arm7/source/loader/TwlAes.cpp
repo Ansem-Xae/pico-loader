@@ -104,7 +104,7 @@ void TwlAes::DecryptModuleAes(void* data, u32 length, const aes_u128_t* iv) cons
 
 void TwlAes::SetupModuleKeyXY(const nds_header_twl_t* romHeader) const
 {
-    if ((romHeader->ntrHeader.twlFlags & (1 << 2)) || (romHeader->twlFlags2 & (1 << 7)))
+    if ((romHeader->twlFlags & (1 << 2)) || (romHeader->twlFlags2 & (1 << 7)))
     {
         // debug
         aes_setKey(KEY_SLOT_MODULE, (const aes_u128_t*)romHeader);
@@ -116,8 +116,8 @@ void TwlAes::SetupModuleKeyXY(const nds_header_twl_t* romHeader) const
         {
             MODULE_KEYX_NINT,
             MODULE_KEYX_ENDO,
-            romHeader->ntrHeader.gameCode,
-            __builtin_bswap32(romHeader->ntrHeader.gameCode)
+            romHeader->gameCode,
+            __builtin_bswap32(romHeader->gameCode)
         }};
         aes_setKeyXY(KEY_SLOT_MODULE, &keyX, (const aes_u128_t*)romHeader->arm9iSha1Hmac);
     }

@@ -63,9 +63,11 @@ struct nds_header_ntr_t
 
 static_assert(sizeof(nds_header_ntr_t) == 0x170, "Invalid size for nds_header_ntr_t");
 
-struct nds_header_twl_t
+#define NDS_HEADER_TWL_ACCESS_CONTROL_SD_ACCESS     (1 << 3)
+#define NDS_HEADER_TWL_ACCESS_CONTROL_NAND_ACCESS   (1 << 4)
+
+struct nds_header_twl_t : public nds_header_ntr_t
 {
-    nds_header_ntr_t ntrHeader;
     u8 gap170[0x10];
     u32 globalMbkSettings[5]; // slot mapping
     u32 arm9MbkSettings[3]; // wram mapping
@@ -130,14 +132,19 @@ struct nds_header_twl_t
     u8 gapF00[0x80];
     u8 headerRsaSha1Signature[0x80];
 
-    constexpr bool IsTwlRom() const
-    {
-        return ntrHeader.IsTwlRom();
-    }
-
     constexpr bool IsDsiWare() const
     {
-        return IsTwlRom() && ((titleId >> 32) & 0xFF) != 0;
+        return IsTwlRom() && ((titleId >> 32) & 4) != 0;
+    }
+
+    constexpr bool HasSdAccess() const
+    {
+        return IsTwlRom() && (accessControl & NDS_HEADER_TWL_ACCESS_CONTROL_SD_ACCESS) != 0;
+    }
+
+    constexpr bool HasNandAccess() const
+    {
+        return IsTwlRom() && (accessControl & NDS_HEADER_TWL_ACCESS_CONTROL_NAND_ACCESS) != 0;
     }
 };
 

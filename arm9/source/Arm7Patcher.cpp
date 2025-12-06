@@ -49,15 +49,18 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform) const
         patchCollection.AddPatch(arm7ArenaPatch);
 
         if (romHeader->unitCode == 0) // seems only present on NITRO, not on HYBRID or LIMITED
+        {
             patchCollection.AddPatch(new DisableArm7WramClearPatch());
+        }
 
         if (sdkVersion.IsTwlSdk())
         {
-            if (gIsDsiMode && romHeader->IsTwlRom() && twlRomHeader->IsDsiWare())
+            if (gIsDsiMode && (twlRomHeader->HasNandAccess() || twlRomHeader->HasSdAccess()))
             {
                 patchCollection.AddPatch(new Sdk5DsiSdCardRedirectPatch());
             }
-            else
+
+            if (!twlRomHeader->IsDsiWare())
             {
                 patchCollection.AddPatch(new CardiDoTaskFromArm9Patch());
             }

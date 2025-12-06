@@ -165,9 +165,9 @@ void NdsLoader::Load(BootMode bootMode)
         }
     }
 
-    bool isHomebrew = (_romHeader.ntrHeader.makerCode[0] == 0 && _romHeader.ntrHeader.makerCode[1] == 0)
-        || _romHeader.ntrHeader.arm9AutoLoadDoneHookAddress == 0
-        || _romHeader.ntrHeader.arm7LoadAddress >= 0x03000000;
+    bool isHomebrew = (_romHeader.makerCode[0] == 0 && _romHeader.makerCode[1] == 0)
+        || _romHeader.arm9AutoLoadDoneHookAddress == 0
+        || _romHeader.arm7LoadAddress >= 0x03000000;
 
     if (isHomebrew)
     {
@@ -186,16 +186,7 @@ void NdsLoader::Load(BootMode bootMode)
         memset(&_dsiwareSaveResult, 0, sizeof(_dsiwareSaveResult));
         if (bootMode != BootMode::Multiboot)
         {
-            if (!_romHeader.IsDsiWare())
-            {
-                if (bootMode != BootMode::SdkResetSystem)
-                {
-                    HandleCardSave();
-                }
-
-                HandleAntiPiracy();
-            }
-            else
+            if (_romHeader.IsDsiWare())
             {
                 if (bootMode == BootMode::SdkResetSystem)
                 {
@@ -209,6 +200,15 @@ void NdsLoader::Load(BootMode bootMode)
                     ErrorDisplay().PrintError("Failed to setup DSiWare save.");
                     return;
                 }
+            }
+            else
+            {
+                if (bootMode != BootMode::SdkResetSystem)
+                {
+                    HandleCardSave();
+                }
+
+                HandleAntiPiracy();
             }
         }
     }
@@ -224,14 +224,14 @@ void NdsLoader::Load(BootMode bootMode)
 
     SetupSharedMemory(cardId, agbMem, resetParam, romOffset, bootType);
 
-    if (Environment::IsDsiMode() && _romHeader.IsTwlRom())
-    {
-        SetupTwlConfig();
-        TwlAes().SetupAes(&_romHeader);
-    }
-
     if (Environment::IsDsiMode())
     {
+        if (_romHeader.IsTwlRom())
+        {
+            SetupTwlConfig();
+            TwlAes().SetupAes(&_romHeader);
+        }
+
         RemapWram();
     }
 
@@ -321,19 +321,19 @@ void NdsLoader::Load(BootMode bootMode)
 
     if (Environment::IsDsiMode())
     {
-        if (!_romHeader.IsTwlRom())
-        {
-            DSMode().SwitchToDSMode(_romHeader.ntrHeader.gameCode);
-        }
-        else
+        if (_romHeader.IsTwlRom())
         {
             if (!(_romHeader.twlFlags2 & 1))
             {
-                DSMode().SwitchToDSTouchAndSoundMode(_romHeader.ntrHeader.gameCode);
+                DSMode().SwitchToDSTouchAndSoundMode(_romHeader.gameCode);
             }
 
             // Set back power button handling to irq mode
             mcu_writeReg(MCU_REG_MODE, 1);
+        }
+        else
+        {
+            DSMode().SwitchToDSMode(_romHeader.gameCode);
         }
     }
 
@@ -349,11 +349,11 @@ void NdsLoader::Load(BootMode bootMode)
 bool NdsLoader::IsCloneBootRom(u32 romOffset)
 {
     bool isCloneBootRom = false;
-    if (_romHeader.ntrHeader.ntrRomSize != 0)
+    if (_romHeader.ntrRomSize != 0)
     {
         UINT bytesRead = 0;
         u16 signatureHeader;
-        if (f_lseek(&_romFile, romOffset + _romHeader.ntrHeader.ntrRomSize) == FR_OK &&
+        if (f_lseek(&_romFile, romOffset + _romHeader.ntrRomSize) == FR_OK &&
             f_read(&_romFile, &signatureHeader, sizeof(signatureHeader), &bytesRead) == FR_OK &&
             bytesRead == 2 &&
             signatureHeader == 0x6361)
@@ -371,7 +371,7 @@ void NdsLoader::InsertArgv()
     u32 argSize = 0;
 
     // Find the address to write argv
-    u32 argDst = ((_romHeader.ntrHeader.arm9LoadAddress + _romHeader.ntrHeader.arm9Size + 3) & ~3) + 4;
+    u32 argDst = ((_romHeader.arm9LoadAddress + _romHeader.arm9Size + 3) & ~3) + 4;
     if (_romHeader.IsTwlRom())
     {
         u32 argDstTwl = ((_romHeader.arm9iLoadAddress + _romHeader.arm9iSize + 3) & ~3) + 4;
@@ -475,8 +475,8 @@ void NdsLoader::SetupSharedMemory(u32 cardId, u32 agbMem, u32 resetParam, u32 ro
     memcpy(TWL_SHARED_MEMORY->ntrSharedMem.romHeader, &_romHeader, sizeof(nds_header_ntr_t));
     *(vu32*)&TWL_SHARED_MEMORY->ntrSharedMem.bootCheckInfo[0] = cardId;
     *(vu32*)&TWL_SHARED_MEMORY->ntrSharedMem.bootCheckInfo[4] = cardId;
-    *(vu16*)&TWL_SHARED_MEMORY->ntrSharedMem.bootCheckInfo[8] = _romHeader.ntrHeader.headerCrc;
-    *(vu16*)&TWL_SHARED_MEMORY->ntrSharedMem.bootCheckInfo[0xA] = _romHeader.ntrHeader.secureAreaCrc;
+    *(vu16*)&TWL_SHARED_MEMORY->ntrSharedMem.bootCheckInfo[8] = _romHeader.headerCrc;
+    *(vu16*)&TWL_SHARED_MEMORY->ntrSharedMem.bootCheckInfo[0xA] = _romHeader.secureAreaCrc;
     *(vu32*)&TWL_SHARED_MEMORY->ntrSharedMem.bootCheckInfo[0x10] = 0x5835; // use correct card id address
     *(vu32*)&TWL_SHARED_MEMORY->ntrSharedMem.isDebuggerData[0x1C] = agbMem;
     TWL_SHARED_MEMORY->ntrSharedMem.resetParam = resetParam;
@@ -536,7 +536,7 @@ bool NdsLoader::ShouldAttemptDldiPatch()
 {
     // Some games contain a fake dldi header to trick flashcards
     // See also: https://shutterbug2000.github.io/very-clever/
-    switch (_romHeader.ntrHeader.gameCode)
+    switch (_romHeader.gameCode)
     {
         // Final Fantasy IV
         case GAMECODE("YF4P"):
@@ -610,7 +610,7 @@ bool NdsLoader::TryLoadRomHeader(u32 romOffset)
 
 void NdsLoader::HandleCardSave()
 {
-    if (!CardSaveArranger().SetupCardSave(_romHeader.ntrHeader.gameCode, _savePath))
+    if (!CardSaveArranger().SetupCardSave(_romHeader.gameCode, _savePath))
     {
         ErrorDisplay().PrintError("Failed to setup save file.");
     }
@@ -621,7 +621,7 @@ void NdsLoader::HandleAntiPiracy()
     auto apList = ApListFactory().CreateFromFile(AP_LIST_PATH);
     if (apList)
     {
-        auto entry = apList->FindEntry(_romHeader.ntrHeader.gameCode, _romHeader.ntrHeader.softwareVersion);
+        auto entry = apList->FindEntry(_romHeader.gameCode, _romHeader.softwareVersion);
         if (entry)
         {
             entry->Dump();
@@ -683,15 +683,15 @@ void NdsLoader::RemapWram()
 
 bool NdsLoader::TryLoadArm9()
 {
-    if (f_lseek(&_romFile, _romHeader.ntrHeader.arm9RomOffset + TWL_SHARED_MEMORY->ntrSharedMem.romOffset) != FR_OK)
+    if (f_lseek(&_romFile, _romHeader.arm9RomOffset + TWL_SHARED_MEMORY->ntrSharedMem.romOffset) != FR_OK)
     {
         LOG_FATAL("Failed to seek to arm9\n");
         return false;
     }
 
     UINT bytesRead = 0;
-    FRESULT result = f_read(&_romFile, (void*)_romHeader.ntrHeader.arm9LoadAddress, _romHeader.ntrHeader.arm9Size, &bytesRead);
-    if (result != FR_OK || bytesRead != _romHeader.ntrHeader.arm9Size)
+    FRESULT result = f_read(&_romFile, (void*)_romHeader.arm9LoadAddress, _romHeader.arm9Size, &bytesRead);
+    if (result != FR_OK || bytesRead != _romHeader.arm9Size)
     {
         LOG_FATAL("Failed to read arm9. Result: %d, bytesRead: %d\n", result, bytesRead);
         return false;
@@ -736,7 +736,7 @@ bool NdsLoader::TryLoadArm9i()
 
 bool NdsLoader::TryDecryptArm9i()
 {
-    if (!(_romHeader.ntrHeader.twlFlags & (1 << 1)))
+    if (!(_romHeader.twlFlags & (1 << 1)))
     {
         return true;
     }
@@ -756,7 +756,7 @@ bool NdsLoader::TryDecryptArm9i()
 
 bool NdsLoader::TryDecryptArm7i()
 {
-    if (!(_romHeader.ntrHeader.twlFlags & (1 << 1)) || _romHeader.modcryptArea2Size == 0)
+    if (!(_romHeader.twlFlags & (1 << 1)) || _romHeader.modcryptArea2Size == 0)
     {
         return true;
     }
@@ -776,15 +776,15 @@ bool NdsLoader::TryDecryptArm7i()
 
 bool NdsLoader::TryLoadArm7()
 {
-    if (f_lseek(&_romFile, _romHeader.ntrHeader.arm7RomOffset + TWL_SHARED_MEMORY->ntrSharedMem.romOffset) != FR_OK)
+    if (f_lseek(&_romFile, _romHeader.arm7RomOffset + TWL_SHARED_MEMORY->ntrSharedMem.romOffset) != FR_OK)
     {
         LOG_FATAL("Failed to seek to arm7\n");
         return false;
     }
 
     UINT bytesRead = 0;
-    FRESULT result = f_read(&_romFile, (void*)_romHeader.ntrHeader.arm7LoadAddress, _romHeader.ntrHeader.arm7Size, &bytesRead);
-    if (result != FR_OK || bytesRead != _romHeader.ntrHeader.arm7Size)
+    FRESULT result = f_read(&_romFile, (void*)_romHeader.arm7LoadAddress, _romHeader.arm7Size, &bytesRead);
+    if (result != FR_OK || bytesRead != _romHeader.arm7Size)
     {
         LOG_FATAL("Failed to read arm7. Result: %d, bytesRead: %d\n", result, bytesRead);
         return false;
@@ -828,19 +828,19 @@ void NdsLoader::HandleDldiPatching()
     }
 
     int arm9DldiAddr = sDldiStubMatcher.FindFirstOccurance(
-        (const u32*)_romHeader.ntrHeader.arm9LoadAddress, _romHeader.ntrHeader.arm9Size >> 2) << 2;
+        (const u32*)_romHeader.arm9LoadAddress, _romHeader.arm9Size >> 2) << 2;
     if (arm9DldiAddr >= 0)
     {
-        dldi_header_t* arm9Dldi = (dldi_header_t*)(_romHeader.ntrHeader.arm9LoadAddress + arm9DldiAddr);
+        dldi_header_t* arm9Dldi = (dldi_header_t*)(_romHeader.arm9LoadAddress + arm9DldiAddr);
         LOG_DEBUG("Dldi found in arm9 at address %p\n", arm9Dldi);
         dldi_patchTo(arm9Dldi);
     }
 
     int arm7DldiAddr = sDldiStubMatcher.FindFirstOccurance(
-        (const u32*)_romHeader.ntrHeader.arm7LoadAddress, _romHeader.ntrHeader.arm7Size >> 2) << 2;
+        (const u32*)_romHeader.arm7LoadAddress, _romHeader.arm7Size >> 2) << 2;
     if (arm7DldiAddr >= 0)
     {
-        dldi_header_t* arm7Dldi = (dldi_header_t*)(_romHeader.ntrHeader.arm7LoadAddress + arm7DldiAddr);
+        dldi_header_t* arm7Dldi = (dldi_header_t*)(_romHeader.arm7LoadAddress + arm7DldiAddr);
         LOG_DEBUG("Dldi found in arm7 at address %p\n", arm7Dldi);
         dldi_patchTo(arm7Dldi);
     }
@@ -860,7 +860,7 @@ void NdsLoader::StartRom(BootMode bootMode)
         REG_IF2 = ~0u;
     }
 
-    ((entrypoint_t)_romHeader.ntrHeader.arm7EntryAddress)();
+    ((entrypoint_t)_romHeader.arm7EntryAddress)();
 }
 
 void NdsLoader::SetupTwlConfig()
@@ -970,20 +970,20 @@ bool NdsLoader::TrySetupDsiWareSave()
 
 bool NdsLoader::TryDecryptSecureArea()
 {
-    if (_romHeader.ntrHeader.arm9RomOffset < 0x4000 || _romHeader.ntrHeader.arm9RomOffset >= 0x8000)
+    if (_romHeader.arm9RomOffset < 0x4000 || _romHeader.arm9RomOffset >= 0x8000)
     {
         return true;
     }
 
-    if (((u32*)_romHeader.ntrHeader.arm9LoadAddress)[0] == 0xE7FFDEFF &&
-        ((u32*)_romHeader.ntrHeader.arm9LoadAddress)[1] == 0xE7FFDEFF)
+    if (((u32*)_romHeader.arm9LoadAddress)[0] == 0xE7FFDEFF &&
+        ((u32*)_romHeader.arm9LoadAddress)[1] == 0xE7FFDEFF)
     {
         return true;
     }
 
     u16 secureAreaCrc = swi_getCrc16(0xFFFF,
-        (const void*)_romHeader.ntrHeader.arm9LoadAddress, 0x8000 - _romHeader.ntrHeader.arm9RomOffset);
-    if (secureAreaCrc != _romHeader.ntrHeader.secureAreaCrc)
+        (const void*)_romHeader.arm9LoadAddress, 0x8000 - _romHeader.arm9RomOffset);
+    if (secureAreaCrc != _romHeader.secureAreaCrc)
     {
         return true;
     }
@@ -1000,13 +1000,13 @@ bool NdsLoader::TryDecryptSecureArea()
     }
 
     auto blowfish = std::make_unique<Blowfish>(keyTable.get());
-    blowfish->TransformTable(_romHeader.ntrHeader.gameCode, 3, 8);
+    blowfish->TransformTable(_romHeader.gameCode, 3, 8);
     blowfish->Decrypt(
-        (const void*)_romHeader.ntrHeader.arm9LoadAddress,
-        (void*)_romHeader.ntrHeader.arm9LoadAddress,
-        0x4800 - _romHeader.ntrHeader.arm9RomOffset);
-    ((u32*)_romHeader.ntrHeader.arm9LoadAddress)[0] = 0xE7FFDEFF;
-    ((u32*)_romHeader.ntrHeader.arm9LoadAddress)[1] = 0xE7FFDEFF;
+        (const void*)_romHeader.arm9LoadAddress,
+        (void*)_romHeader.arm9LoadAddress,
+        0x4800 - _romHeader.arm9RomOffset);
+    ((u32*)_romHeader.arm9LoadAddress)[0] = 0xE7FFDEFF;
+    ((u32*)_romHeader.arm9LoadAddress)[1] = 0xE7FFDEFF;
 
     LOG_DEBUG("Decrypted secure area\n");
     return true;
