@@ -32,9 +32,9 @@
 
 typedef void (*uncompress_func_t)(void* compressedEnd);
 
-static const u32 sMiiUncompressBackwardPatternOld[] = { 0xE3500000, 0x0A000025, 0xE92D00F0, 0xE9100006 }; // mkds beta; version 0x2012774
-static const u32 sMiiUncompressBackwardPatternOld2[] = { 0xE3500000, 0x0A00002B, 0xE92D00F0, 0xE9100006 }; // asterix & obelix xxl 2; version 0x3017531
-static const u32 sMiiUncompressBackwardPattern[] = { 0xE3500000, 0x0A000027, 0xE92D00F0, 0xE9100006 }; // mkds
+static const u32 sMiiUncompressBackwardPatternOld[] = { 0xE3500000, 0x0A000025, 0xE92D00F0, 0xE9100006 };
+static const u32 sMiiUncompressBackwardPatternOld2[] = { 0xE3500000, 0x0A00002B, 0xE92D00F0, 0xE9100006 };
+static const u32 sMiiUncompressBackwardPattern[] = { 0xE3500000, 0x0A000027, 0xE92D00F0, 0xE9100006 };
 static const u32 sMiiUncompressBackwardPatternHybrid[] = { 0xE3500000, 0x0A000029, 0xE92D01F0, 0xE9100006 };
 
 void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApListEntry* apListEntry,
@@ -42,13 +42,11 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
 {
     auto romHeader = (const nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader;
     auto twlRomHeader = (const nds_header_twl_t*)TWL_SHARED_MEMORY->twlRomHeader;
-    ModuleParamsLocator moduleParamsLocator;
-    auto moduleParams = moduleParamsLocator.FindModuleParams(romHeader);
     u32 arm9Size = romHeader->arm9Size;
     u32 arm9iSize = romHeader->IsTwlRom() ? twlRomHeader->arm9iSize : 0;
-    SdkVersion sdkVersion = moduleParams ? moduleParams->sdkVersion : 0u;
     u32 compressedEnd = 0;
-    PatchCollection patchCollection;
+    auto moduleParams = ModuleParamsLocator().FindModuleParams(romHeader);
+    SdkVersion sdkVersion = moduleParams ? moduleParams->sdkVersion : 0u;
     if (moduleParams)
     {
         LOG_DEBUG("Module params found at 0x%p\n", moduleParams);
@@ -56,18 +54,7 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
         const u32* miiUncompressBackward = nullptr;
         if (moduleParams->compressedEnd)
         {
-            const u32* miiUncompressBackwardPattern;
-            if (sdkVersion <= 0x2017532)
-                miiUncompressBackwardPattern = sMiiUncompressBackwardPatternOld;
-            else
-                miiUncompressBackwardPattern = sMiiUncompressBackwardPattern;
-
-            miiUncompressBackward = fastSearch16((const u32*)romHeader->arm9LoadAddress, 0x1000, miiUncompressBackwardPattern);
-            if (!sdkVersion.IsTwlSdk() && !miiUncompressBackward)
-                miiUncompressBackward = fastSearch16((const u32*)romHeader->arm9LoadAddress, 0x1000, sMiiUncompressBackwardPatternOld2);
-            if (sdkVersion.IsTwlSdk() && !miiUncompressBackward)
-                miiUncompressBackward = fastSearch16((const u32*)romHeader->arm9LoadAddress, 0x1000, sMiiUncompressBackwardPatternHybrid);
-
+            miiUncompressBackward = FindMIiUncompressBackward(romHeader->arm9LoadAddress, sdkVersion);
             if (miiUncompressBackward)
             {
                 arm9Size = moduleParams->compressedEnd + *(u32*)(moduleParams->compressedEnd - 4) - romHeader->arm9LoadAddress;
@@ -85,22 +72,20 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
         {
             auto arm9iModuleParams = (module_params_twl_t*)(romHeader->arm9LoadAddress + twlRomHeader->arm9iModuleParamsAddress);
             if (arm9iModuleParams->magicBigEndian == MODULE_PARAMS_TWL_MAGIC_BE &&
-                arm9iModuleParams->magicLittleEndian == MODULE_PARAMS_TWL_MAGIC_LE)
+                arm9iModuleParams->magicLittleEndian == MODULE_PARAMS_TWL_MAGIC_LE &&
+                arm9iModuleParams->compressedEnd != 0)
             {
-                if (arm9iModuleParams->compressedEnd)
+                LOG_DEBUG("Compressed arm9i found\n");
+                if (miiUncompressBackward)
                 {
-                    LOG_DEBUG("Compressed arm9i found\n");
-                    if (miiUncompressBackward)
-                    {
-                        arm9iSize = arm9iModuleParams->compressedEnd + *(u32*)(arm9iModuleParams->compressedEnd - 4) - twlRomHeader->arm9iLoadAddress;
-                        ((uncompress_func_t)miiUncompressBackward)((void*)arm9iModuleParams->compressedEnd);
-                        arm9iModuleParams->compressedEnd = 0;
-                        LOG_DEBUG("Decompressed arm9i\n");
-                    }
-                    else
-                    {
-                        LOG_DEBUG("Could not decompress arm9i\n");
-                    }
+                    arm9iSize = arm9iModuleParams->compressedEnd + *(u32*)(arm9iModuleParams->compressedEnd - 4) - twlRomHeader->arm9iLoadAddress;
+                    ((uncompress_func_t)miiUncompressBackward)((void*)arm9iModuleParams->compressedEnd);
+                    arm9iModuleParams->compressedEnd = 0;
+                    LOG_DEBUG("Decompressed arm9i\n");
+                }
+                else
+                {
+                    LOG_DEBUG("Could not decompress arm9i\n");
                 }
             }
         }
@@ -125,6 +110,7 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
         romHeader->gameCode,
         loaderPlatform
     };
+    PatchCollection patchCollection;
     if (sdkVersion != 0)
     {
         if (*(vu32*)0x02FFF00C == GAMECODE("ADAJ") &&
@@ -180,118 +166,8 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
         }
 
         patchCollection.AddPatch(new CardiReadRomIdCorePatch());
-
         patchCollection.AddPatch(new OSResetSystemPatch(loaderInfo));
-
-        OverlayHookPatch* overlayHookPatch;
-        if (romHeader->gameCode == GAMECODE("BO5P") ||
-            romHeader->gameCode == GAMECODE("BO5E") ||
-            romHeader->gameCode == GAMECODE("BO5J"))
-        {
-            overlayHookPatch = new GoldenSunDarkDawnOverlayHookPatch();
-            overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(334, 0, DSProtectVersion::v2_01, ~0u));
-            overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(335, 0, DSProtectVersion::v2_01s, ~0u));
-        }
-        else
-        {
-            overlayHookPatch = new FsStartOverlayHookPatch();
-            if (apListEntry)
-            {
-                u32 regularOverlayId = apListEntry->GetRegularOverlayId();
-                if (regularOverlayId != AP_LIST_OVERLAY_ID_INVALID)
-                {
-                    if (regularOverlayId == AP_LIST_OVERLAY_ID_STATIC_ARM9)
-                    {
-                        LOG_WARNING("Patching DSProtect in main memory currently not supported\n");
-                    }
-                    else
-                    {
-                        overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(
-                            regularOverlayId, apListEntry->GetRegularOffset(),
-                            apListEntry->GetDSProtectVersion(), apListEntry->GetDSProtectFunctionMask()));
-                    }
-                }
-                u32 sOverlayId = apListEntry->GetSOverlayId();
-                if (sOverlayId != AP_LIST_OVERLAY_ID_INVALID)
-                {
-                    if (sOverlayId == AP_LIST_OVERLAY_ID_STATIC_ARM9)
-                    {
-                        LOG_WARNING("Patching DSProtect in main memory currently not supported\n");
-                    }
-                    else
-                    {
-                        auto version = apListEntry->GetDSProtectVersion();
-                        if (version < DSProtectVersion::v2_00s)
-                        {
-                            version = (DSProtectVersion)((u32)version - (u32)DSProtectVersion::v2_00 + (u32)DSProtectVersion::v2_00s);
-                        }
-                        overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(
-                            sOverlayId, apListEntry->GetSOffset(), version, ~0u));
-                    }
-                }
-            }
-            switch (romHeader->gameCode)
-            {
-                // Pokemon HeartGold & SoulSilver
-                case GAMECODE("IPGD"):
-                case GAMECODE("IPGE"):
-                case GAMECODE("IPGF"):
-                case GAMECODE("IPGI"):
-                case GAMECODE("IPGJ"):
-                case GAMECODE("IPGK"):
-                case GAMECODE("IPGS"):
-                case GAMECODE("IPKD"):
-                case GAMECODE("IPKE"):
-                case GAMECODE("IPKF"):
-                case GAMECODE("IPKI"):
-                case GAMECODE("IPKJ"):
-                case GAMECODE("IPKK"):
-                case GAMECODE("IPKS"):
-                {
-                    overlayHookPatch->AddOverlayPatch(new PokemonIrApPatch(PokemonIrVersion::Hgss));
-                    break;
-                }
-                // Pokemon Black & White
-                case GAMECODE("IRAD"):
-                case GAMECODE("IRAF"):
-                case GAMECODE("IRAI"):
-                case GAMECODE("IRAJ"):
-                case GAMECODE("IRAK"):
-                case GAMECODE("IRAO"):
-                case GAMECODE("IRAS"):
-                case GAMECODE("IRBD"):
-                case GAMECODE("IRBF"):
-                case GAMECODE("IRBI"):
-                case GAMECODE("IRBJ"):
-                case GAMECODE("IRBK"):
-                case GAMECODE("IRBO"):
-                case GAMECODE("IRBS"):
-                {
-                    overlayHookPatch->AddOverlayPatch(new PokemonIrApPatch(PokemonIrVersion::Bw1));
-                    break;
-                }
-                // Pokemon Black & White 2
-                case GAMECODE("IRDD"):
-                case GAMECODE("IRDF"):
-                case GAMECODE("IRDI"):
-                case GAMECODE("IRDJ"):
-                case GAMECODE("IRDK"):
-                case GAMECODE("IRDO"):
-                case GAMECODE("IRDS"):
-                case GAMECODE("IRED"):
-                case GAMECODE("IREF"):
-                case GAMECODE("IREI"):
-                case GAMECODE("IREJ"):
-                case GAMECODE("IREK"):
-                case GAMECODE("IREO"):
-                case GAMECODE("IRES"):
-                {
-                    overlayHookPatch->AddOverlayPatch(new PokemonIrApPatch(PokemonIrVersion::Bw2));
-                    break;
-                }
-            }
-        }
-        patchCollection.AddPatch(overlayHookPatch);
+        AddGamePatches(patchCollection, romHeader->gameCode, apListEntry);
 
         if (moduleParams && compressedEnd != 0)
         {
@@ -309,6 +185,155 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
     dc_flushAll();
     dc_drainWriteBuffer();
     ic_invalidateAll();
+}
+
+const u32* Arm9Patcher::FindMIiUncompressBackward(u32 arm9LoadAddress, SdkVersion sdkVersion) const
+{
+    const u32* miiUncompressBackwardPattern;
+    if (sdkVersion <= 0x2017532)
+    {
+        miiUncompressBackwardPattern = sMiiUncompressBackwardPatternOld;
+    }
+    else
+    {
+        miiUncompressBackwardPattern = sMiiUncompressBackwardPattern;
+    }
+
+    const u32* miiUncompressBackward = fastSearch16((const u32*)arm9LoadAddress, 0x1000, miiUncompressBackwardPattern);
+    if (!sdkVersion.IsTwlSdk() && !miiUncompressBackward)
+    {
+        miiUncompressBackward = fastSearch16((const u32*)arm9LoadAddress, 0x1000, sMiiUncompressBackwardPatternOld2);
+    }
+    if (sdkVersion.IsTwlSdk() && !miiUncompressBackward)
+    {
+        miiUncompressBackward = fastSearch16((const u32*)arm9LoadAddress, 0x1000, sMiiUncompressBackwardPatternHybrid);
+    }
+
+    return miiUncompressBackward;
+}
+
+void Arm9Patcher::AddGamePatches(PatchCollection& patchCollection, u32 gameCode, const ApListEntry* apListEntry) const
+{
+    OverlayHookPatch* overlayHookPatch;
+    if (gameCode == GAMECODE("BO5P") || gameCode == GAMECODE("BO5E") || gameCode == GAMECODE("BO5J"))
+    {
+        overlayHookPatch = new GoldenSunDarkDawnOverlayHookPatch();
+        overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(334, 0, DSProtectVersion::v2_01, ~0u));
+        overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(335, 0, DSProtectVersion::v2_01s, ~0u));
+    }
+    else
+    {
+        overlayHookPatch = new FsStartOverlayHookPatch();
+        if (apListEntry)
+        {
+            AddDSProtectPatches(patchCollection, overlayHookPatch, apListEntry);
+        }
+        AddGameSpecificPatches(patchCollection, overlayHookPatch, gameCode);
+    }
+
+    patchCollection.AddPatch(overlayHookPatch);
+}
+
+void Arm9Patcher::AddDSProtectPatches(
+    PatchCollection& patchCollection, OverlayHookPatch* overlayHookPatch, const ApListEntry* apListEntry) const
+{
+    u32 regularOverlayId = apListEntry->GetRegularOverlayId();
+    if (regularOverlayId != AP_LIST_OVERLAY_ID_INVALID)
+    {
+        if (regularOverlayId == AP_LIST_OVERLAY_ID_STATIC_ARM9)
+        {
+            LOG_WARNING("Patching DSProtect in main memory currently not supported\n");
+        }
+        else
+        {
+            overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(
+                regularOverlayId, apListEntry->GetRegularOffset(),
+                apListEntry->GetDSProtectVersion(), apListEntry->GetDSProtectFunctionMask()));
+        }
+    }
+    u32 sOverlayId = apListEntry->GetSOverlayId();
+    if (sOverlayId != AP_LIST_OVERLAY_ID_INVALID)
+    {
+        if (sOverlayId == AP_LIST_OVERLAY_ID_STATIC_ARM9)
+        {
+            LOG_WARNING("Patching DSProtect in main memory currently not supported\n");
+        }
+        else
+        {
+            auto version = apListEntry->GetDSProtectVersion();
+            if (version < DSProtectVersion::v2_00s)
+            {
+                version = (DSProtectVersion)((u32)version - (u32)DSProtectVersion::v2_00 + (u32)DSProtectVersion::v2_00s);
+            }
+            overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(
+                sOverlayId, apListEntry->GetSOffset(), version, ~0u));
+        }
+    }
+}
+
+void Arm9Patcher::AddGameSpecificPatches(
+    PatchCollection& patchCollection, OverlayHookPatch* overlayHookPatch, u32 gameCode) const
+{
+    switch (gameCode)
+    {
+        // Pokemon HeartGold & SoulSilver
+        case GAMECODE("IPGD"):
+        case GAMECODE("IPGE"):
+        case GAMECODE("IPGF"):
+        case GAMECODE("IPGI"):
+        case GAMECODE("IPGJ"):
+        case GAMECODE("IPGK"):
+        case GAMECODE("IPGS"):
+        case GAMECODE("IPKD"):
+        case GAMECODE("IPKE"):
+        case GAMECODE("IPKF"):
+        case GAMECODE("IPKI"):
+        case GAMECODE("IPKJ"):
+        case GAMECODE("IPKK"):
+        case GAMECODE("IPKS"):
+        {
+            overlayHookPatch->AddOverlayPatch(new PokemonIrApPatch(PokemonIrVersion::Hgss));
+            break;
+        }
+        // Pokemon Black & White
+        case GAMECODE("IRAD"):
+        case GAMECODE("IRAF"):
+        case GAMECODE("IRAI"):
+        case GAMECODE("IRAJ"):
+        case GAMECODE("IRAK"):
+        case GAMECODE("IRAO"):
+        case GAMECODE("IRAS"):
+        case GAMECODE("IRBD"):
+        case GAMECODE("IRBF"):
+        case GAMECODE("IRBI"):
+        case GAMECODE("IRBJ"):
+        case GAMECODE("IRBK"):
+        case GAMECODE("IRBO"):
+        case GAMECODE("IRBS"):
+        {
+            overlayHookPatch->AddOverlayPatch(new PokemonIrApPatch(PokemonIrVersion::Bw1));
+            break;
+        }
+        // Pokemon Black & White 2
+        case GAMECODE("IRDD"):
+        case GAMECODE("IRDF"):
+        case GAMECODE("IRDI"):
+        case GAMECODE("IRDJ"):
+        case GAMECODE("IRDK"):
+        case GAMECODE("IRDO"):
+        case GAMECODE("IRDS"):
+        case GAMECODE("IRED"):
+        case GAMECODE("IREF"):
+        case GAMECODE("IREI"):
+        case GAMECODE("IREJ"):
+        case GAMECODE("IREK"):
+        case GAMECODE("IREO"):
+        case GAMECODE("IRES"):
+        {
+            overlayHookPatch->AddOverlayPatch(new PokemonIrApPatch(PokemonIrVersion::Bw2));
+            break;
+        }
+    }
 }
 
 void Arm9Patcher::AddRestoreCompressedEndPatch(PatchContext& patchContext,

@@ -1,9 +1,12 @@
 #pragma once
 #include "LoaderInfo.h"
+#include "SdkVersion.h"
 
 class ApListEntry;
 class LoaderPlatform;
 class PatchContext;
+class PatchCollection;
+class OverlayHookPatch;
 
 /// @brief Class for patching the arm9 of retail roms.
 class Arm9Patcher
@@ -18,6 +21,12 @@ public:
         bool isCloneBootRom, const loader_info_t* loaderInfo) const;
 
 private:
+    const u32* FindMIiUncompressBackward(u32 arm9LoadAddress, SdkVersion sdkVersion) const;
+    void AddGamePatches(PatchCollection& patchCollection, u32 gameCode, const ApListEntry* apListEntry) const;
+    void AddDSProtectPatches(PatchCollection& patchCollection,
+        OverlayHookPatch* overlayHookPatch, const ApListEntry* apListEntry) const;
+    void AddGameSpecificPatches(PatchCollection& patchCollection,
+        OverlayHookPatch* overlayHookPatch, u32 gameCode) const;
     void AddRestoreCompressedEndPatch(PatchContext& patchContext,
         u32 arm9AutoLoadDoneHookAddress, u32* moduleParamsCompressedEnd, u32 originalCompressedEndValue) const;
     u32 GetAvailableParentSectionSpace() const;
