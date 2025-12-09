@@ -14,6 +14,7 @@
 #include "patches/arm9/PokemonDownloaderArm9Patch.h"
 #include "patches/arm9/OverlayPatches/FsStartOverlayHookPatch.h"
 #include "patches/arm9/OverlayPatches/DSProtectPatches/DSProtectOverlayPatch.h"
+#include "patches/arm9/OverlayPatches/DSProtectPatches/DSProtectPuyoPuyo7Patch.h"
 #include "patches/arm9/OverlayPatches/PokemonIr/PokemonIrApPatch.h"
 #include "patches/arm9/OverlayPatches/GoldenSunDarkDawn/GoldenSunDarkDawnOverlayHookPatch.h"
 #include "SecureSysCallsUnusedSpaceLocator.h"
@@ -276,6 +277,42 @@ void Arm9Patcher::AddGameSpecificPatches(
 {
     switch (gameCode)
     {
+        // Dragon Ball: Origins 2
+        case GAMECODE("BDBE"):
+        {
+            // BDBE;2;1.23;111111;0x1FC;-1;0x0
+            // BDBE;3;1.23;111111;0x47DC;-1;0x0
+            overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(2, 0x1FC, DSProtectVersion::v1_23, ~0u));
+            overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(3, 0x47DC, DSProtectVersion::v1_23, ~0u));
+            break;
+        }
+        case GAMECODE("BDBJ"):
+        {
+            // BDBJ;2;1.23;111111;0x1FC;-1;0x0
+            // BDBJ;3;1.23;111111;0x4C34;-1;0x0
+            overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(2, 0x1FC, DSProtectVersion::v1_23, ~0u));
+            overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(3, 0x4C34, DSProtectVersion::v1_23, ~0u));
+            break;
+        }
+        case GAMECODE("BDBP"):
+        {
+            // BDBP;2;1.23;111111;0x1FC;-1;0x0
+            // BDBP;3;1.23;111111;0x484C;-1;0x0
+            overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(2, 0x1FC, DSProtectVersion::v1_23, ~0u));
+            overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(3, 0x484C, DSProtectVersion::v1_23, ~0u));
+            break;
+        }
+        // Puyo Puyo 7
+        case GAMECODE("BYOJ"):
+        {
+            // BYOJ;9;1.08;100110;1.08;0x21AC;-1;0x0
+            // BYOJ;12;1.08;100101;1.08;0xC568;-1;0x0
+            // BYOJ;14;1.08;010101;1.08;0x13AB8;-1;0x0
+            // BYOJ;15;1.08;010110;1.08;0x16DF0;-1;0x0
+            // BYOJ;19;1.08;011010;1.08;0x17F8;-1;0x0
+            overlayHookPatch->AddOverlayPatch(new DSProtectPuyoPuyo7Patch());
+            break;
+        }
         // Pokemon HeartGold & SoulSilver
         case GAMECODE("IPGD"):
         case GAMECODE("IPGE"):
