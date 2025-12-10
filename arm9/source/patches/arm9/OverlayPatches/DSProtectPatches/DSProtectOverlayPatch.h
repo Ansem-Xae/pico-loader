@@ -10,6 +10,7 @@ public:
         : _overlayId(overlayId), _overlayOffset(overlayOffset), _version(version), _functionMask(functionMask) { }
 
     const void* InsertPatch(PatchContext& patchContext) override;
+    void ApplyPatchForStaticArm9(u32 arm9LoadAddress) const;
 
 private:
     u32 _overlayId;
@@ -17,5 +18,5 @@ private:
     DSProtectVersion _version;
     u32 _functionMask;
 
-    void ConfigurePatch(PatchContext& patchContext) const;
+    void CalculateOffsets() const;
 };

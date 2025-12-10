@@ -1,7 +1,5 @@
 #include "common.h"
 #include "../../../PatchContext.h"
-#include "thumbInstructions.h"
-#include "gameCode.h"
 #include "DSProtectOverlayPatchAsm.h"
 #include "DSProtectOverlayPatch.h"
 
@@ -23,7 +21,10 @@
 
 const void* DSProtectOverlayPatch::InsertPatch(PatchContext& patchContext)
 {
-    ConfigurePatch(patchContext);
+    // Next patch and target overlay ID
+    dsprotectpatch_nextAddress = next ? (const void*)next->InsertPatch(patchContext) : nullptr;
+    dsprotectpatch_overlayId = _overlayId;
+    CalculateOffsets();
 
     u32 patchSize = SECTION_SIZE(dsprotectpatch);
     void* patchAddress = patchContext.GetPatchHeap().Alloc(patchSize);
@@ -33,12 +34,21 @@ const void* DSProtectOverlayPatch::InsertPatch(PatchContext& patchContext)
     return (const void*)entryAddress;
 }
 
-void DSProtectOverlayPatch::ConfigurePatch(PatchContext& patchContext) const
+void DSProtectOverlayPatch::ApplyPatchForStaticArm9(u32 arm9LoadAddress) const
 {
-    // Next patch and target overlay ID
-    dsprotectpatch_nextAddress = next ? (const void*)next->InsertPatch(patchContext) : nullptr;
-    dsprotectpatch_overlayId = _overlayId;
+    u32 fakeOverlayInfo[2];
+    fakeOverlayInfo[0] = _overlayId; // ovy_id
+    fakeOverlayInfo[1] = arm9LoadAddress; // ram_start
 
+    dsprotectpatch_nextAddress = nullptr;
+    dsprotectpatch_overlayId = _overlayId;
+    CalculateOffsets();
+
+    dsprotectpatch_executeWithParam(fakeOverlayInfo);
+}
+
+void DSProtectOverlayPatch::CalculateOffsets() const
+{
     u32 regionOffset = _overlayOffset;
 
     // Default invalid, enable below
