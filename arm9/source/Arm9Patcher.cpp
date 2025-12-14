@@ -12,6 +12,7 @@
 #include "patches/arm9/CardiReadRomIdCorePatch.h"
 #include "patches/arm9/OSResetSystemPatch.h"
 #include "patches/arm9/PokemonDownloaderArm9Patch.h"
+#include "patches/arm9/DSProtectArm9Patch.h"
 #include "patches/arm9/OverlayPatches/FsStartOverlayHookPatch.h"
 #include "patches/arm9/OverlayPatches/DSProtectPatches/DSProtectOverlayPatch.h"
 #include "patches/arm9/OverlayPatches/DSProtectPatches/DSProtectPuyoPuyo7Patch.h"
@@ -243,7 +244,9 @@ void Arm9Patcher::AddDSProtectPatches(
     {
         if (regularOverlayId == AP_LIST_OVERLAY_ID_STATIC_ARM9)
         {
-            LOG_WARNING("Patching DSProtect in main memory currently not supported\n");
+            patchCollection.AddPatch(new DSProtectArm9Patch(
+                apListEntry->GetRegularOffset(), apListEntry->GetDSProtectVersion(),
+                apListEntry->GetDSProtectFunctionMask()));
         }
         else
         {
@@ -255,17 +258,18 @@ void Arm9Patcher::AddDSProtectPatches(
     u32 sOverlayId = apListEntry->GetSOverlayId();
     if (sOverlayId != AP_LIST_OVERLAY_ID_INVALID)
     {
+        auto version = apListEntry->GetDSProtectVersion();
+        if (version < DSProtectVersion::v2_00s)
+        {
+            version = (DSProtectVersion)((u32)version - (u32)DSProtectVersion::v2_00 + (u32)DSProtectVersion::v2_00s);
+        }
         if (sOverlayId == AP_LIST_OVERLAY_ID_STATIC_ARM9)
         {
-            LOG_WARNING("Patching DSProtect in main memory currently not supported\n");
+            patchCollection.AddPatch(new DSProtectArm9Patch(
+                apListEntry->GetSOffset(), version, ~0u));
         }
         else
         {
-            auto version = apListEntry->GetDSProtectVersion();
-            if (version < DSProtectVersion::v2_00s)
-            {
-                version = (DSProtectVersion)((u32)version - (u32)DSProtectVersion::v2_00 + (u32)DSProtectVersion::v2_00s);
-            }
             overlayHookPatch->AddOverlayPatch(new DSProtectOverlayPatch(
                 sOverlayId, apListEntry->GetSOffset(), version, ~0u));
         }

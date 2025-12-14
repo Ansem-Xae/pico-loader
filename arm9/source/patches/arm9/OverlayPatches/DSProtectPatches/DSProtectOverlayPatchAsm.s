@@ -86,4 +86,16 @@ dsprotectpatch_nextAddress:
 
 .pool
 
+.text
+
+.global dsprotectpatch_executeWithParam
+.type dsprotectpatch_executeWithParam, %function
+dsprotectpatch_executeWithParam:
+    push {r5, lr}
+    movs r5, r0
+    bl dsprotectpatch_entry
+    pop {r5, pc}
+
+.pool
+
 .end
