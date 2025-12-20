@@ -13,3 +13,4 @@ extern u32 __patch_carditaskthread_failoffset;
 extern u32 __patch_carditaskthread_successoffset;
 extern u32 __patch_carditaskthread_readsave_asm_address;
 extern u32 __patch_carditaskthread_writesave_asm_address;
+extern u32 __patch_carditaskthread_verifysave_asm_address;

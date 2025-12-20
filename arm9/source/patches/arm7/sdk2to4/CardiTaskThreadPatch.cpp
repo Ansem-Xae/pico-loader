@@ -5,6 +5,7 @@
 #include "patches/PatchContext.h"
 #include "patches/arm7/ReadSaveAsm.h"
 #include "patches/arm7/WriteSaveAsm.h"
+#include "patches/arm7/VerifySaveAsm.h"
 #include "patches/FunctionSignature.h"
 #include "patches/platform/LoaderPlatform.h"
 #include "patches/arm7/SaveOffsetToSdSectorAsm.h"
@@ -131,9 +132,16 @@ void CardiTaskThreadPatch::ApplyPatch(PatchContext& patchContext)
         writePatchCode,
         tmpBuffer
     );
+    auto verifySavePatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<VerifySavePatchCode>(
+        patchContext.GetPatchHeap(),
+        sectorRemapPatchCode,
+        readPatchCode,
+        tmpBuffer
+    );
 
     __patch_carditaskthread_readsave_asm_address = (u32)readSavePatchCode->GetReadSaveFunction();
     __patch_carditaskthread_writesave_asm_address = (u32)writeSavePatchCode->GetWriteSaveFunction();
+    __patch_carditaskthread_verifysave_asm_address = (u32)verifySavePatchCode->GetVerifySaveFunction();
 
     u32 entryAddress;
     u32 patchOffset;

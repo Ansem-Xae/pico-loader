@@ -93,8 +93,17 @@ write_backup:
 
 verify_backup:
     ldr r0, [r4]
-    movs r1, #0
-    str r1, [r0] // result
+    ldr r2, [r0, #0xC] // src
+    ldr r1, [r0, #0x10] // dst
+    ldr r3, [r0, #0x14] // len
+    cmp r3, #0
+        beq end_success
+
+    push {r0}
+    ldr r0, __patch_carditaskthread_verifysave_asm_address
+    bl blx_r0
+    pop {r1}
+    str r0, [r1] // result
     b end_success
 
 blx_r0:
@@ -116,6 +125,10 @@ __patch_carditaskthread_readsave_asm_address:
 
 .global __patch_carditaskthread_writesave_asm_address
 __patch_carditaskthread_writesave_asm_address:
+    .word 0
+
+.global __patch_carditaskthread_verifysave_asm_address
+__patch_carditaskthread_verifysave_asm_address:
     .word 0
 
 .pool
