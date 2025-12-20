@@ -218,22 +218,15 @@ static void handleBootCommand()
     REG_EXMEMCNT &= ~0x0880; // map ds and gba slot to arm9
     sLoaderPlatform->PrepareRomBoot(sRomDirSector, sRomDirSectorOffset);
     Arm9IoRegisterClearer().ClearNtrIoRegisters(isSdkResetSystem);
+    REG_EXMEMCNT |= 0x0880; // map ds and gba slot to arm7
     auto ntrRomHeader = (const nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader;
-    if (ntrRomHeader->IsTwlRom())
+    if (gIsDsiMode && ntrRomHeader->IsTwlRom())
     {
-        if (gIsDsiMode)
-        {
-            Arm9IoRegisterClearer().ClearTwlIoRegisters();
-            REG_SCFG_EXT = 0x8307F100;
-            scfg_setArm9Clock(ScfgArm9Clock::Twl134MHz);
-            REG_SCFG_CLK = 0x87;
-            REG_SCFG_RST = 1;
-        }
-        auto twlRomHeader = (const nds_header_twl_t*)TWL_SHARED_MEMORY->twlRomHeader;
-        if (twlRomHeader->IsDsiWare())
-        {
-            REG_EXMEMCNT |= 0x0880; // map ds and gba slot to arm7
-        }
+        Arm9IoRegisterClearer().ClearTwlIoRegisters();
+        REG_SCFG_EXT = 0x8307F100;
+        scfg_setArm9Clock(ScfgArm9Clock::Twl134MHz);
+        REG_SCFG_CLK = 0x87;
+        REG_SCFG_RST = 1;
     }
     bootArm9();
 }
