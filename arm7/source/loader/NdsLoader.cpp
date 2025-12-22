@@ -166,7 +166,7 @@ void NdsLoader::Load(BootMode bootMode)
     }
 
     bool isHomebrew = (_romHeader.makerCode[0] == 0 && _romHeader.makerCode[1] == 0)
-        || _romHeader.arm9AutoLoadDoneHookAddress == 0
+        || (_romHeader.arm9AutoLoadDoneHookAddress == 0 && _romHeader.arm7AutoLoadDoneHookAddress == 0)
         || _romHeader.arm7LoadAddress >= 0x03000000;
 
     if (isHomebrew)
