@@ -7,14 +7,24 @@ class FunctionSignature;
 class CardiTaskThreadPatch : public Patch
 {
 public:
+    enum class PatchVariant : u16
+    {
+        None,
+        A,
+        B,
+        C,
+        D,
+        E,
+        F
+    };
+
     bool FindPatchTarget(PatchContext& patchContext) override;
     void ApplyPatch(PatchContext& patchContext) override;
 
 private:
     u32* _cardiTaskThread = nullptr;
     u16 _thumb = false;
-    u16 _peach = false;
-    u16 _pokemonDownloader = false;
+    PatchVariant _patchVariant = PatchVariant::None;
 
     bool CheckSignature(const PatchContext& patchContext, const FunctionSignature& signature);
 };

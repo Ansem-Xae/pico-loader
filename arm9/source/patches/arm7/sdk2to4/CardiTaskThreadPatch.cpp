@@ -14,31 +14,37 @@
 #include "thumbInstructions.h"
 #include "CardiTaskThreadPatch.h"
 
-static constexpr auto sSignaturesArm = std::to_array<const FunctionSignature>
+struct CardiTaskThreadSignature
+{
+    FunctionSignature signature;
+    CardiTaskThreadPatch::PatchVariant patchVariant;
+};
+
+static constexpr auto sSignaturesArm = std::to_array<const CardiTaskThreadSignature>
 ({
-    { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59FA108u, 0xE28A5040u }, 0x020029A0, 0x02005015 },
-    { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59FA10Cu, 0xE28A5040u }, 0x02004F50, 0x02017532 },
-    { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91DCu, 0xE2895044u }, 0x02017532, 0x02017532 },
-    { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91E0u, 0xE2895044u }, 0x02017532, 0x02027534 },
-    { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91E0u, 0xE2895048u }, 0x030028A0, 0x03004E86 },
-    { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91D4u, 0xE2895048u }, 0x03004F4C, 0x03017534 },
-    { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91F8u, 0xE2895048u }, 0x03017530, 0x04017530 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEADCu }, 0x04002774, 0x04017533 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEACEu }, 0x04007531, 0x04007531 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEABFu }, 0x04007530, 0x04007531 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEAAAu }, 0x04017530, 0x04017533 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEA94u }, 0x04017530, 0x04017533 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEA8Du }, 0x04017531, 0x04017533 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEA77u }, 0x04017533, 0x04017533 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA70u }, 0x04027530, 0x04027539 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA8Du }, 0x04027530, 0x04027539 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA6Cu }, 0x04027531, 0x04027531 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA77u }, 0x04027531, 0x04027539 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA5Au }, 0x04027533, 0x04027533 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFFAD7u }, 0x03017531, 0x03017531 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFFAA5u }, 0x03027531, 0x03027531 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEADBu }, 0x03027531, 0x03027531 },
-    { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA68u }, 0x04027533, 0x04027533 }
+    { { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59FA108u, 0xE28A5040u }, 0x020029A0, 0x02005015 }, CardiTaskThreadPatch::PatchVariant::A },
+    { { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59FA10Cu, 0xE28A5040u }, 0x02004F50, 0x02017532 }, CardiTaskThreadPatch::PatchVariant::B },
+    { { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91DCu, 0xE2895044u }, 0x02017532, 0x02017532 }, CardiTaskThreadPatch::PatchVariant::C },
+    { { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91E0u, 0xE2895044u }, 0x02017532, 0x02027534 }, CardiTaskThreadPatch::PatchVariant::C },
+    { { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91E0u, 0xE2895048u }, 0x030028A0, 0x03004E86 }, CardiTaskThreadPatch::PatchVariant::C },
+    { { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91D4u, 0xE2895048u }, 0x03004F4C, 0x03017534 }, CardiTaskThreadPatch::PatchVariant::C },
+    { { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91F8u, 0xE2895048u }, 0x03017530, 0x04017530 }, CardiTaskThreadPatch::PatchVariant::D },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEADCu }, 0x04002774, 0x04017533 }, CardiTaskThreadPatch::PatchVariant::E },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEACEu }, 0x04007531, 0x04007531 }, CardiTaskThreadPatch::PatchVariant::E },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEABFu }, 0x04007530, 0x04007531 }, CardiTaskThreadPatch::PatchVariant::E },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEAAAu }, 0x04017530, 0x04017533 }, CardiTaskThreadPatch::PatchVariant::E },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEA94u }, 0x04017530, 0x04017533 }, CardiTaskThreadPatch::PatchVariant::E },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEA8Du }, 0x04017531, 0x04017533 }, CardiTaskThreadPatch::PatchVariant::E },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEA77u }, 0x04017533, 0x04017533 }, CardiTaskThreadPatch::PatchVariant::E },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA70u }, 0x04027530, 0x04027539 }, CardiTaskThreadPatch::PatchVariant::F },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA8Du }, 0x04027530, 0x04027539 }, CardiTaskThreadPatch::PatchVariant::F },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA6Cu }, 0x04027531, 0x04027531 }, CardiTaskThreadPatch::PatchVariant::F },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA77u }, 0x04027531, 0x04027539 }, CardiTaskThreadPatch::PatchVariant::F },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA5Au }, 0x04027533, 0x04027533 }, CardiTaskThreadPatch::PatchVariant::F },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFFAD7u }, 0x03017531, 0x03017531 }, CardiTaskThreadPatch::PatchVariant::E },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFFAA5u }, 0x03027531, 0x03027531 }, CardiTaskThreadPatch::PatchVariant::E },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEADBu }, 0x03027531, 0x03027531 }, CardiTaskThreadPatch::PatchVariant::E },
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA68u }, 0x04027533, 0x04027533 }, CardiTaskThreadPatch::PatchVariant::F }
 });
 
 static constexpr auto sSignaturesThumb = std::to_array<const FunctionSignature>
@@ -59,18 +65,10 @@ bool CardiTaskThreadPatch::FindPatchTarget(PatchContext& patchContext)
 {
     for (const auto& signature : sSignaturesArm)
     {
-        if (CheckSignature(patchContext, signature))
+        if (CheckSignature(patchContext, signature.signature))
         {
-            if (signature.GetPattern()[2] == 0xE59F91DCu)
-            {
-                _peach = true;
-            }
-            else if (signature.GetPattern()[3] == 0xEBFFFAD7u
-                || signature.GetPattern()[3] == 0xEBFFFAA5u
-                || signature.GetPattern()[3] == 0xEBFFEADBu)
-            {
-                _pokemonDownloader = true;
-            }
+            _thumb = false;
+            _patchVariant = signature.patchVariant;
             break;
         }
     }
@@ -220,16 +218,20 @@ void CardiTaskThreadPatch::ApplyPatch(PatchContext& patchContext)
     }
     else
     {
-        if (patchContext.GetSdkVersion() < 0x2020000 && !_peach)
+        if (_patchVariant == PatchVariant::A || _patchVariant == PatchVariant::B)
         {
             // uses a table dispatch
             //0xA4 = ldr r1,= table
             __patch_carditaskthread_failoffset = 4;
             __patch_carditaskthread_successoffset = 4;
-            if (patchContext.GetSdkVersion() >= 0x2005015)//0x2007532)//0x2012774)
+            if (_patchVariant == PatchVariant::B)
+            {
                 patchOffset = 0xA4;
+            }
             else
+            {
                 patchOffset = 0xA0;
+            }
 
             entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
             __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R10);
@@ -241,29 +243,41 @@ void CardiTaskThreadPatch::ApplyPatch(PatchContext& patchContext)
         }
         else
         {
-            if (patchContext.GetSdkVersion() >= 0x4027531)
+            switch (_patchVariant)
             {
-                patchOffset = 0xA8;
-                entryAddress = (u32)&__patch_carditaskthread_entry_sdk4 - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
-            }
-            else if (patchContext.GetSdkVersion() >= 0x4007530 || _pokemonDownloader)
-            {
-                patchOffset = 0xA8;
-                entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
-            }
-            else if (patchContext.GetSdkVersion() >= 0x3017531)
-            {
-                patchOffset = 0xB4;
-                entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R9);
-            }
-            else
-            {
-                patchOffset = 0x9C;
-                entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R9);
+                case PatchVariant::C:
+                {
+                    patchOffset = 0x9C;
+                    entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                    __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R9);
+                    break;
+                }
+                case PatchVariant::D:
+                {
+                    patchOffset = 0xB4;
+                    entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                    __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R9);
+                    break;
+                }
+                case PatchVariant::E:
+                {
+                    patchOffset = 0xA8;
+                    entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                    __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
+                    break;
+                }
+                case PatchVariant::F:
+                {
+                    patchOffset = 0xA8;
+                    entryAddress = (u32)&__patch_carditaskthread_entry_sdk4 - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                    __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
+                    break;
+                }
+                default:
+                {
+                    LOG_FATAL("Unsupported arm CARDi_TaskThread\n");
+                    while(1);
+                }
             }
 
             *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x00) = 0xe59f000C; // ldr r0,= entryAddress
