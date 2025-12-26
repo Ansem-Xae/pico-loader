@@ -10,12 +10,18 @@ public:
     enum class PatchVariant : u16
     {
         None,
-        A,
-        B,
-        C,
-        D,
-        E,
-        F
+        ArmA,
+        ArmB,
+        ArmC,
+        ArmD,
+        ArmE,
+        ArmF,
+        ThumbA,
+        ThumbB,
+        ThumbC,
+        ThumbD,
+        ThumbE,
+        ThumbF
     };
 
     bool FindPatchTarget(PatchContext& patchContext) override;
@@ -23,7 +29,6 @@ public:
 
 private:
     u32* _cardiTaskThread = nullptr;
-    u16 _thumb = false;
     PatchVariant _patchVariant = PatchVariant::None;
 
     bool CheckSignature(const PatchContext& patchContext, const FunctionSignature& signature);
