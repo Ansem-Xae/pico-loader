@@ -20,8 +20,9 @@ struct CardiTaskThreadSignature
     CardiTaskThreadPatch::PatchVariant patchVariant;
 };
 
-static constexpr auto sSignaturesArm = std::to_array<const CardiTaskThreadSignature>
+static constexpr auto sSignatures = std::to_array<const CardiTaskThreadSignature>
 ({
+    // arm
     { { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59FA108u, 0xE28A5040u }, 0x020029A0, 0x02005015 }, CardiTaskThreadPatch::PatchVariant::ArmA },
     { { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59FA10Cu, 0xE28A5040u }, 0x02004F50, 0x02017532 }, CardiTaskThreadPatch::PatchVariant::ArmB },
     { { (const u32[]) { 0xE92D4FF0u, 0xE24DD004u, 0xE59F91DCu, 0xE2895044u }, 0x02017532, 0x02017532 }, CardiTaskThreadPatch::PatchVariant::ArmC },
@@ -44,11 +45,9 @@ static constexpr auto sSignaturesArm = std::to_array<const CardiTaskThreadSignat
     { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFFAD7u }, 0x03017531, 0x03017531 }, CardiTaskThreadPatch::PatchVariant::ArmE },
     { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFFAA5u }, 0x03027531, 0x03027531 }, CardiTaskThreadPatch::PatchVariant::ArmE },
     { { (const u32[]) { 0xE92D41F0u, 0xE59F4200u, 0xE3A05000u, 0xEBFFEADBu }, 0x03027531, 0x03027531 }, CardiTaskThreadPatch::PatchVariant::ArmE },
-    { { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA68u }, 0x04027533, 0x04027533 }, CardiTaskThreadPatch::PatchVariant::ArmF }
-});
+    { { (const u32[]) { 0xE92D41F0u, 0xE59F4224u, 0xE3A05000u, 0xEBFFEA68u }, 0x04027533, 0x04027533 }, CardiTaskThreadPatch::PatchVariant::ArmF },
 
-static constexpr auto sSignaturesThumb = std::to_array<const CardiTaskThreadSignature>
-({
+    // thumb
     { { (const u32[]) { 0xB081B5F0u, 0x1C2E4D2Du, 0x27103640u, 0xF7FC2400u }, 0x02004FB0, 0x02004FB4 }, CardiTaskThreadPatch::PatchVariant::ThumbA },
     { { (const u32[]) { 0xB081B5F0u, 0x1C2E4D2Bu, 0x27103640u, 0xF7FC2400u }, 0x02007531, 0x02017532 }, CardiTaskThreadPatch::PatchVariant::ThumbB },
     { { (const u32[]) { 0xB081B5F0u, 0x1C264C57u, 0x27103644u, 0xF7FC2500u }, 0x02027532, 0x02027535 }, CardiTaskThreadPatch::PatchVariant::ThumbC },
@@ -63,21 +62,15 @@ static constexpr auto sSignaturesThumb = std::to_array<const CardiTaskThreadSign
 
 bool CardiTaskThreadPatch::FindPatchTarget(PatchContext& patchContext)
 {
-    for (const auto& signature : sSignaturesArm)
+    for (const auto& signature : sSignatures)
     {
-        if (CheckSignature(patchContext, signature.signature))
+        if (patchContext.GetSdkVersion() >= signature.signature.GetMinimumSdkVersion() &&
+            patchContext.GetSdkVersion() <= signature.signature.GetMaximumSdkVersion())
         {
-            _patchVariant = signature.patchVariant;
-            break;
-        }
-    }
-
-    if (!_cardiTaskThread)
-    {
-        for (const auto& signature : sSignaturesThumb)
-        {
-            if (CheckSignature(patchContext, signature.signature))
+            _cardiTaskThread = patchContext.FindPattern32(signature.signature.GetPattern(), 16);
+            if (_cardiTaskThread)
             {
+                LOG_DEBUG("CARDi_TaskThread found at 0x%p\n", _cardiTaskThread);
                 _patchVariant = signature.patchVariant;
                 break;
             }
@@ -141,186 +134,193 @@ void CardiTaskThreadPatch::ApplyPatch(PatchContext& patchContext)
     __patch_carditaskthread_writesave_asm_address = (u32)writeSavePatchCode->GetWriteSaveFunction();
     __patch_carditaskthread_verifysave_asm_address = (u32)verifySavePatchCode->GetVerifySaveFunction();
 
-    u32 entryAddress;
-    u32 patchOffset;
     if (_patchVariant >= PatchVariant::ThumbA)
     {
-        if (_patchVariant == PatchVariant::ThumbF)
-        {
-            // [+0x90] = 00 18 78 44
-            // adds r0, r0, r0
-            // add r0, pc
-            patchOffset = 0x90;
-            entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-            __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOVS_REG(THUMB_R4, THUMB_R5);
-            __patch_carditaskthread_successoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x0C) + 9;
-            __patch_carditaskthread_failoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x14) + 9;
-
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x00) = THUMB_LDR_PC_IMM(THUMB_R1, 4);
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x02) = THUMB_MOV_HIREG(THUMB_HI_LR, THUMB_HI_PC);
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x04) = THUMB_BX(THUMB_R1);
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x08) = entryAddress;
-        }
-        else if (_patchVariant == PatchVariant::ThumbE)
-        {
-            // [+0x90] = 00 18 78 44
-            // adds r0, r0, r0
-            // add r0, pc
-            patchOffset = 0x90;
-            entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-            __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
-            __patch_carditaskthread_successoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x0C) + 9;
-            __patch_carditaskthread_failoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x14) + 9;
-
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x00) = THUMB_LDR_PC_IMM(THUMB_R1, 4);
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x02) = THUMB_MOV_HIREG(THUMB_HI_LR, THUMB_HI_PC);
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x04) = THUMB_BX(THUMB_R1);
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x08) = entryAddress;
-        }
-        else if (_patchVariant == PatchVariant::ThumbD)
-        {
-            // [+0x98] = 00 18 78 44
-            // adds r0, r0, r0
-            // add r0, pc
-            patchOffset = 0x98;
-            entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-            __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
-            __patch_carditaskthread_successoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x0E) + 8;
-            __patch_carditaskthread_failoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x18) + 8;
-
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x00) = THUMB_LDR_PC_IMM(THUMB_R1, 4);
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x02) = THUMB_MOV_HIREG(THUMB_HI_LR, THUMB_HI_PC);
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x04) = THUMB_BX(THUMB_R1);
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x08) = entryAddress;
-        }
-        else if (_patchVariant == PatchVariant::ThumbC)
-        {
-            // [+0x82] = 00 18 78 44
-            // adds r0, r0, r0
-            // add r0, pc
-            patchOffset = 0x82;
-            entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-            __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
-            __patch_carditaskthread_successoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x0E) + 8;
-            __patch_carditaskthread_failoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x18) + 8;
-
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x00) = THUMB_LDR_PC_IMM(THUMB_R1, 4);
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x02) = THUMB_MOV_HIREG(THUMB_HI_LR, THUMB_HI_PC);
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x04) = THUMB_BX(THUMB_R1);
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x06) = entryAddress;
-        }
-        else if (_patchVariant == PatchVariant::ThumbA || _patchVariant == PatchVariant::ThumbB)//patchContext.GetSdkVersion() >= 0x2004FB0)
-        {
-            // [+0x60 or +0x64] = 28 1C 69 68
-            // adds r0, r5, #0
-            // ldr r1, [r5, #4]
-            patchOffset = _patchVariant == PatchVariant::ThumbB ? 0x60 : 0x64;
-            entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-            __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOVS_REG(THUMB_R4, THUMB_R5);
-            __patch_carditaskthread_failoffset = 0;
-            __patch_carditaskthread_successoffset = 0;
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x00) = THUMB_LDR_PC_IMM(THUMB_R1, 0);
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x02) = 0xE001; // jump over entryAddress
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x04) = entryAddress;
-            *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x08) = THUMB_NOP;
-        }
-        else
-        {
-            LOG_FATAL("Unsupported thumb CARDi_TaskThread\n");
-            while(1);
-        }
+        ApplyThumbPatch(patch1Address);
     }
     else
     {
-        if (_patchVariant == PatchVariant::ArmA || _patchVariant == PatchVariant::ArmB)
-        {
-            // uses a table dispatch
-            __patch_carditaskthread_failoffset = 4;
-            __patch_carditaskthread_successoffset = 4;
-            if (_patchVariant == PatchVariant::ArmB)
-            {
-                // [+0xA4] = 0xE59F1074 = ldr r1,= table
-                patchOffset = 0xA4;
-            }
-            else
-            {
-                // [+0xA0] = 0xE59F1074 = ldr r1,= table
-                patchOffset = 0xA0;
-            }
-
-            entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-            __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R10);
-
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x00) = 0xe59f0004; // ldr r0,= entryAddress
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x04) = 0xe1a0e00f; // mov lr, pc
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x08) = 0xe12fff10; // bx r0
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x0C) = entryAddress;
-        }
-        else
-        {
-            switch (_patchVariant)
-            {
-                case PatchVariant::ArmC:
-                {
-                    // [+0x9C] = 0xE5990004 = ldr r0, [r9, #4]
-                    patchOffset = 0x9C;
-                    entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-                    __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R9);
-                    break;
-                }
-                case PatchVariant::ArmD:
-                {
-                    // [+0xB4] = 0xE5990004 = ldr r0, [r9, #4]
-                    patchOffset = 0xB4;
-                    entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-                    __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R9);
-                    break;
-                }
-                case PatchVariant::ArmE:
-                {
-                    // [+0xA8] = 0xE5940004 = ldr r0, [r4, #4]
-                    patchOffset = 0xA8;
-                    entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-                    __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
-                    break;
-                }
-                case PatchVariant::ArmF:
-                {
-                    // [+0xA8] = 0x0A000044 = beq
-                    patchOffset = 0xA8;
-                    entryAddress = (u32)&__patch_carditaskthread_entry_sdk4 - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
-                    __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
-                    break;
-                }
-                default:
-                {
-                    LOG_FATAL("Unsupported arm CARDi_TaskThread\n");
-                    while(1);
-                }
-            }
-
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x00) = 0xe59f000C; // ldr r0,= entryAddress
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x04) = 0xe1a0e00f; // mov lr, pc
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x08) = 0xe12fff10; // bx r0
-            *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x14) = entryAddress;
-        }
+        ApplyArmPatch(patch1Address);
     }
 
     memcpy(patch1Address, SECTION_START(patch_carditaskthread), patch1Size);
 }
 
-bool CardiTaskThreadPatch::CheckSignature(const PatchContext& patchContext, const FunctionSignature& signature)
+void CardiTaskThreadPatch::ApplyArmPatch(void* patch1Address) const
 {
-    if (patchContext.GetSdkVersion() >= signature.GetMinimumSdkVersion() &&
-        patchContext.GetSdkVersion() <= signature.GetMaximumSdkVersion())
+    u32 entryAddress;
+    u32 patchOffset;
+    if (_patchVariant == PatchVariant::ArmA || _patchVariant == PatchVariant::ArmB)
     {
-        _cardiTaskThread = patchContext.FindPattern32(signature.GetPattern(), 16);
-        if (_cardiTaskThread)
+        // uses a table dispatch
+        __patch_carditaskthread_failoffset = 4;
+        __patch_carditaskthread_successoffset = 4;
+        if (_patchVariant == PatchVariant::ArmB)
         {
-            LOG_DEBUG("CARDi_TaskThread found at 0x%p\n", _cardiTaskThread);
-            return true;
+            // [+0xA4] = 0xE59F1074 = ldr r1,= table
+            patchOffset = 0xA4;
         }
-    }
+        else
+        {
+            // [+0xA0] = 0xE59F1074 = ldr r1,= table
+            patchOffset = 0xA0;
+        }
 
-    return false;
+        entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+        __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R10);
+
+        *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x00) = 0xe59f0004; // ldr r0,= entryAddress
+        *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x04) = 0xe1a0e00f; // mov lr, pc
+        *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x08) = 0xe12fff10; // bx r0
+        *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x0C) = entryAddress;
+    }
+    else
+    {
+        switch (_patchVariant)
+        {
+            case PatchVariant::ArmC:
+            {
+                // [+0x9C] = 0xE5990004 = ldr r0, [r9, #4]
+                patchOffset = 0x9C;
+                entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R9);
+                break;
+            }
+            case PatchVariant::ArmD:
+            {
+                // [+0xB4] = 0xE5990004 = ldr r0, [r9, #4]
+                patchOffset = 0xB4;
+                entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOV_HIREG(THUMB_R4, THUMB_HI_R9);
+                break;
+            }
+            case PatchVariant::ArmE:
+            {
+                // [+0xA8] = 0xE5940004 = ldr r0, [r4, #4]
+                patchOffset = 0xA8;
+                entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
+                break;
+            }
+            case PatchVariant::ArmF:
+            {
+                // [+0xA8] = 0x0A000044 = beq
+                patchOffset = 0xA8;
+                entryAddress = (u32)&__patch_carditaskthread_entry_sdk4 - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
+                break;
+            }
+            default:
+            {
+                LOG_FATAL("Unsupported CARDi_TaskThread\n");
+                while (1);
+                break;
+            }
+        }
+
+        *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x00) = 0xE59F000C; // ldr r0,= entryAddress
+        *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x04) = 0xE1A0E00F; // mov lr, pc
+        *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x08) = 0xE12FFF10; // bx r0
+        *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x14) = entryAddress;
+    }
+}
+
+void CardiTaskThreadPatch::ApplyThumbPatch(void* patch1Address) const
+{
+    u32 entryAddress;
+    u32 patchOffset;
+    if (_patchVariant == PatchVariant::ThumbA || _patchVariant == PatchVariant::ThumbB)
+    {
+        if (_patchVariant == PatchVariant::ThumbB)
+        {
+            // [+0x60] = 28 1C 69 68
+            // adds r0, r5, #0
+            // ldr r1, [r5, #4]
+            patchOffset = 0x60;
+        }
+        else
+        {
+            // [+0x64] = 28 1C 69 68
+            // adds r0, r5, #0
+            // ldr r1, [r5, #4]
+            patchOffset = 0x64;
+        }
+
+        entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+        __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOVS_REG(THUMB_R4, THUMB_R5);
+        __patch_carditaskthread_failoffset = 0;
+        __patch_carditaskthread_successoffset = 0;
+        *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x00) = THUMB_LDR_PC_IMM(THUMB_R1, 0);
+        *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x02) = 0xE001; // jump over entryAddress
+        *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x04) = entryAddress;
+        *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x08) = THUMB_NOP;
+    }
+    else
+    {
+        switch (_patchVariant)
+        {
+            case PatchVariant::ThumbC:
+            {
+                // [+0x82] = 00 18 78 44
+                // adds r0, r0, r0
+                // add r0, pc
+                patchOffset = 0x82;
+                entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
+                __patch_carditaskthread_successoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x0E) + 8;
+                __patch_carditaskthread_failoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x18) + 8;
+                *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x06) = entryAddress;
+                break;
+            }
+            case PatchVariant::ThumbD:
+            {
+                // [+0x98] = 00 18 78 44
+                // adds r0, r0, r0
+                // add r0, pc
+                patchOffset = 0x98;
+                entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
+                __patch_carditaskthread_successoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x0E) + 8;
+                __patch_carditaskthread_failoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x18) + 8;
+                *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x08) = entryAddress;
+                break;
+            }
+            case PatchVariant::ThumbE:
+            {
+                // [+0x90] = 00 18 78 44
+                // adds r0, r0, r0
+                // add r0, pc
+                patchOffset = 0x90;
+                entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_NOP;
+                __patch_carditaskthread_successoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x0C) + 9;
+                __patch_carditaskthread_failoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x14) + 9;
+                *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x08) = entryAddress;
+                break;
+            }
+            case PatchVariant::ThumbF:
+            {
+                // [+0x90] = 00 18 78 44
+                // adds r0, r0, r0
+                // add r0, pc
+                patchOffset = 0x90;
+                entryAddress = (u32)&__patch_carditaskthread_entry - (u32)SECTION_START(patch_carditaskthread) + (u32)patch1Address;
+                __patch_carditaskthread_mov_cardicommon_to_r4 = THUMB_MOVS_REG(THUMB_R4, THUMB_R5);
+                __patch_carditaskthread_successoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x0C) + 9;
+                __patch_carditaskthread_failoffset = *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x14) + 9;
+                *(u32*)((u8*)_cardiTaskThread + patchOffset + 0x08) = entryAddress;
+                break;
+            }
+            default:
+            {
+                LOG_FATAL("Unsupported thumb CARDi_TaskThread\n");
+                while (1);
+                break;
+            }
+        }
+
+        *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x00) = THUMB_LDR_PC_IMM(THUMB_R1, 4);
+        *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x02) = THUMB_MOV_HIREG(THUMB_HI_LR, THUMB_HI_PC);
+        *(u16*)((u8*)_cardiTaskThread + patchOffset + 0x04) = THUMB_BX(THUMB_R1);
+    }
 }

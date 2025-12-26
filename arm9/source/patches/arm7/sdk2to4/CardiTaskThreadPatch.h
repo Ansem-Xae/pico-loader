@@ -31,5 +31,6 @@ private:
     u32* _cardiTaskThread = nullptr;
     PatchVariant _patchVariant = PatchVariant::None;
 
-    bool CheckSignature(const PatchContext& patchContext, const FunctionSignature& signature);
+    void ApplyArmPatch(void* patch1Address) const;
+    void ApplyThumbPatch(void* patch1Address) const;
 };
