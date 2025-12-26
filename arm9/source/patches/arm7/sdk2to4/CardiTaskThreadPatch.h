@@ -1,8 +1,6 @@
 #pragma once
 #include "patches/Patch.h"
 
-class FunctionSignature;
-
 /// @brief Arm7 patch for redirecting save reads and writes on SDK 2-4.
 class CardiTaskThreadPatch : public Patch
 {
