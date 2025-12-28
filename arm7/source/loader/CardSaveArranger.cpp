@@ -4,34 +4,51 @@
 #include "SaveList.h"
 #include "SaveListFactory.h"
 #include "fileInfo.h"
+#include "gameCode.h"
 #include "CardSaveArranger.h"
 
 #define SAVE_LIST_PATH      "/_pico/savelist.bin"
 #define DEFAULT_SAVE_SIZE   (512 * 1024)
 #define SAVE_FILL_VALUE     0xFF
+#define NTR_NAND_BLOCK_SIZE 0x20000
+#define TWL_NAND_BLOCK_SIZE 0x80000
+#define NAND_RW_REGION_END  0x07A00000
 
-static const u8 sNandSaveId[16] = { 0xEC, 0x00, 0x9E, 0xA1, 0x51, 0x65, 0x34, 0x35, 0x30, 0x35, 0x30, 0x31, 0x19, 0x19, 0x02, 0x0A };
+static const u8 sBandBrothersSaveId[12] = { 0x48, 0x8A, 0x00, 0x00, 0x42, 0x42, 0x44, 0x58, 0x31, 0x32, 0x33, 0x34 };
+static const u8 sJamWithTheBandSaveId[16] = { 0xEC, 0x00, 0x9E, 0xA1, 0x51, 0x65, 0x34, 0x35, 0x30, 0x35, 0x30, 0x31, 0x19, 0x19, 0x02, 0x0A };
 
-bool CardSaveArranger::SetupCardSave(u32 gameCode, const TCHAR* savePath) const
+bool CardSaveArranger::SetupCardSave(const nds_header_ntr_t* header, const TCHAR* savePath) const
 {
-    SaveList* saveList = SaveListFactory().CreateFromFile(SAVE_LIST_PATH);
-    u32 saveSize = DEFAULT_SAVE_SIZE;
     auto saveType = CardSaveType::None;
-    if (saveList)
+    u32 saveSize = DEFAULT_SAVE_SIZE;
+    if (header->nandBackupRegionStart != 0)
     {
-        const auto saveListEntry = saveList->FindEntry(gameCode);
-        if (!saveListEntry)
+        saveType = CardSaveType::Nand;
+        u32 blockSize = header->IsTwlRom() ? TWL_NAND_BLOCK_SIZE : NTR_NAND_BLOCK_SIZE;
+        u32 nandBackupRegionStart = header->nandBackupRegionStart * blockSize;
+        saveSize = NAND_RW_REGION_END - nandBackupRegionStart;
+        LOG_DEBUG("NAND save. Size: 0x%X.", saveSize);
+    }
+    else
+    {
+        SaveList* saveList = SaveListFactory().CreateFromFile(SAVE_LIST_PATH);
+        if (saveList)
         {
-            LOG_WARNING("Game code %c%c%c%c not found in save list\n",
-                gameCode & 0xFF, (gameCode >> 8) & 0xFF, (gameCode >> 16) & 0xFF, gameCode >> 24);
+            const auto saveListEntry = saveList->FindEntry(header->gameCode);
+            if (!saveListEntry)
+            {
+                LOG_WARNING("Game code %c%c%c%c not found in save list\n",
+                    header->gameCode & 0xFF, (header->gameCode >> 8) & 0xFF,
+                    (header->gameCode >> 16) & 0xFF, header->gameCode >> 24);
+            }
+            else
+            {
+                saveType = saveListEntry->GetSaveType();
+                saveSize = saveListEntry->GetSaveSize();
+                saveListEntry->Dump();
+            }
+            delete saveList;
         }
-        else
-        {
-            saveType = saveListEntry->GetSaveType();
-            saveSize = saveListEntry->GetSaveSize();
-            saveListEntry->Dump();
-        }
-        delete saveList;
     }
     if (saveSize == 0)
     {
@@ -88,17 +105,29 @@ bool CardSaveArranger::SetupCardSave(u32 gameCode, const TCHAR* savePath) const
             offset += bytesToWrite;
         }
 
-        if (saveType == CardSaveType::Nand)
+        // Additional save initialization
+        if (header->gameCode == GAMECODE("AXBJ"))
         {
-            // NAND save games have a read-only NAND save id at the end of their save area.
-            // Jam with the Band checks this id and errors if it cannot find it.
-            // See https://github.com/melonDS-emu/melonDS/blob/3a3388c4c50e8735af125c1af4d89e457f5e9035/src/NDSCart.cpp#L1067
+            // Write save id for Band Brothers
+            UINT bytesWritten = 0;
+            if (f_lseek(file.get(), 0) != FR_OK ||
+                f_write(file.get(), sBandBrothersSaveId, sizeof(sBandBrothersSaveId), &bytesWritten) != FR_OK ||
+                bytesWritten != sizeof(sBandBrothersSaveId))
+            {
+                LOG_FATAL("Failed to write Band Brothers save id\n");
+                return false;
+            }
+        }
+        else if (header->gameCode == GAMECODE("UXBP"))
+        {
+            // Write save id for Jam with the Band
+            // See also https://github.com/melonDS-emu/melonDS/blob/3a3388c4c50e8735af125c1af4d89e457f5e9035/src/NDSCart.cpp#L1067
             UINT bytesWritten = 0;
             if (f_lseek(file.get(), saveSize - 0x800) != FR_OK ||
-                f_write(file.get(), sNandSaveId, sizeof(sNandSaveId), &bytesWritten) != FR_OK ||
-                bytesWritten != sizeof(sNandSaveId))
+                f_write(file.get(), sJamWithTheBandSaveId, sizeof(sJamWithTheBandSaveId), &bytesWritten) != FR_OK ||
+                bytesWritten != sizeof(sJamWithTheBandSaveId))
             {
-                LOG_FATAL("Failed to write NAND save id\n");
+                LOG_FATAL("Failed to write Jam with the Band save id\n");
                 return false;
             }
         }

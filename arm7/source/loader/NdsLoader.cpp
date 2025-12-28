@@ -205,7 +205,11 @@ void NdsLoader::Load(BootMode bootMode)
             {
                 if (bootMode != BootMode::SdkResetSystem)
                 {
-                    HandleCardSave();
+                    if (!CardSaveArranger().SetupCardSave(&_romHeader, _savePath))
+                    {
+                        ErrorDisplay().PrintError("Failed to setup save file.");
+                        return;
+                    }
                 }
 
                 HandleAntiPiracy();
@@ -606,14 +610,6 @@ bool NdsLoader::TryLoadRomHeader(u32 romOffset)
 
     LOG_DEBUG("Rom header loaded\n");
     return true;
-}
-
-void NdsLoader::HandleCardSave()
-{
-    if (!CardSaveArranger().SetupCardSave(_romHeader.gameCode, _savePath))
-    {
-        ErrorDisplay().PrintError("Failed to setup save file.");
-    }
 }
 
 void NdsLoader::HandleAntiPiracy()

@@ -13,7 +13,9 @@
 #include "patches/arm9/OSResetSystemPatch.h"
 #include "patches/arm9/PokemonDownloaderArm9Patch.h"
 #include "patches/arm9/DSProtectArm9Patch.h"
+#include "patches/arm9/NandSave/FaceTrainingNandSavePatch.h"
 #include "patches/arm9/NandSave/JamWithTheBandNandSavePatch.h"
+#include "patches/arm9/NandSave/NintendoDSGuideNandSavePatch.h"
 #include "patches/arm9/NandSave/WarioWareDiyNandSavePatch.h"
 #include "patches/arm9/OverlayPatches/FsStartOverlayHookPatch.h"
 #include "patches/arm9/OverlayPatches/DSProtectPatches/DSProtectOverlayPatch.h"
@@ -388,6 +390,18 @@ void Arm9Patcher::AddGameSpecificPatches(
         case GAMECODE("UXBP"):
         {
             patchCollection.AddPatch(new JamWithTheBandNandSavePatch());
+            break;
+        }
+        // Face Training
+        case GAMECODE("USKV"):
+        {
+            patchCollection.AddPatch(new FaceTrainingNandSavePatch());
+            break;
+        }
+        // Nintendo DS Guide
+        case GAMECODE("UGDA"):
+        {
+            patchCollection.AddPatch(new NintendoDSGuideNandSavePatch());
             break;
         }
     }
