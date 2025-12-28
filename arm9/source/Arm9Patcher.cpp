@@ -13,6 +13,8 @@
 #include "patches/arm9/OSResetSystemPatch.h"
 #include "patches/arm9/PokemonDownloaderArm9Patch.h"
 #include "patches/arm9/DSProtectArm9Patch.h"
+#include "patches/arm9/NandSave/JamWithTheBandNandSavePatch.h"
+#include "patches/arm9/NandSave/WarioWareDiyNandSavePatch.h"
 #include "patches/arm9/OverlayPatches/FsStartOverlayHookPatch.h"
 #include "patches/arm9/OverlayPatches/DSProtectPatches/DSProtectOverlayPatch.h"
 #include "patches/arm9/OverlayPatches/DSProtectPatches/DSProtectPuyoPuyo7Patch.h"
@@ -372,6 +374,20 @@ void Arm9Patcher::AddGameSpecificPatches(
         case GAMECODE("IRES"):
         {
             overlayHookPatch->AddOverlayPatch(new PokemonIrApPatch(PokemonIrVersion::Bw2));
+            break;
+        }
+        // WarioWare: D.I.Y.
+        case GAMECODE("UORE"):
+        case GAMECODE("UORP"):
+        case GAMECODE("UORJ"):
+        {
+            patchCollection.AddPatch(new WarioWareDiyNandSavePatch());
+            break;
+        }
+        // Jam with the Band
+        case GAMECODE("UXBP"):
+        {
+            patchCollection.AddPatch(new JamWithTheBandNandSavePatch());
             break;
         }
     }

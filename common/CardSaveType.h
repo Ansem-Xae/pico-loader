@@ -1,7 +1,7 @@
 #pragma once
 
 /// @brief Enum representing the save type.
-enum class CardSaveType
+enum class CardSaveType : u8
 {
     /// @brief The game has no save.
     None = 0,

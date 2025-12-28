@@ -5,9 +5,8 @@
 #include "patches/arm7/ReadSaveAsm.h"
 #include "patches/arm7/WriteSaveAsm.h"
 #include "patches/arm7/VerifySaveAsm.h"
-#include "patches/arm7/SaveOffsetToSdSectorAsm.h"
+#include "patches/SaveOffsetToSdSectorAsm.h"
 #include "patches/platform/LoaderPlatform.h"
-#include "patches/OffsetToSectorRemapAsm.h"
 #include "patches/arm7/CardiTaskThreadPatchAsm.h"
 #include "CardiDoTaskFromArm9Patch.h"
 

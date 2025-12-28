@@ -7,13 +7,13 @@
 class SaveListEntry
 {
     u32 gameCode;
-    u8 saveType; // see CardSaveType
+    CardSaveType saveType;
     u8 saveSize; // 0 or 1 << x
     u8 reserved[2]; // for possible future use
 
 public:
     u32 GetGameCode() const { return gameCode; }
-    CardSaveType GetSaveType() const { return static_cast<CardSaveType>(saveType); }
+    CardSaveType GetSaveType() const { return saveType; }
     u32 GetSaveSize() const { return saveSize == 0 ? 0 : (1u << saveSize); }
 
     void Dump() const

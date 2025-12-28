@@ -1,5 +1,6 @@
 #include "common.h"
 #include <string.h>
+#include <algorithm>
 #include <memory>
 #include "DsiWareSaveArranger.h"
 
@@ -70,7 +71,7 @@ bool DsiWareSaveArranger::SetupDsiWareSaveFile(const TCHAR* savePath, u32 saveSi
         if (f_lseek(file.get(), saveSize) != FR_OK ||
             f_lseek(file.get(), 0) != FR_OK)
         {
-            LOG_FATAL("Failed to create private save file\n");
+            LOG_FATAL("Failed to create DSiWare save file\n");
             return false;
         }
 
@@ -80,21 +81,28 @@ bool DsiWareSaveArranger::SetupDsiWareSaveFile(const TCHAR* savePath, u32 saveSi
         if (f_write(file.get(), fatHeader.get(), sizeof(fat_header_t), &bytesWritten) != FR_OK ||
             bytesWritten != sizeof(fat_header_t))
         {
-            LOG_FATAL("Failed to format private save file\n");
+            LOG_FATAL("Failed to format DSiWare save file\n");
             return false;
         }
 
-        memset(fatHeader.get(), 0, 512);
+        fatHeader.reset();
 
-        while (f_tell(file.get()) < saveSize)
+        const u32 clearBufferSize = 32 * 1024;
+        auto clearBuffer = std::make_unique<u8[]>(clearBufferSize);
+        memset(clearBuffer.get(), 0, clearBufferSize);
+
+        u32 offset = f_tell(file.get());
+        while (offset < saveSize)
         {
+            u32 bytesToWrite = std::min<u32>(saveSize - offset, clearBufferSize);
             bytesWritten = 0;
-            if (f_write(file.get(), fatHeader.get(), 512, &bytesWritten) != FR_OK ||
-                bytesWritten != 512)
+            if (f_write(file.get(), clearBuffer.get(), bytesToWrite, &bytesWritten) != FR_OK ||
+                bytesWritten != bytesToWrite)
             {
-                LOG_FATAL("Failed to format private save file\n");
+                LOG_FATAL("Failed to format DSiWare save file\n");
                 return false;
             }
+            offset += bytesToWrite;
         }
     }
 

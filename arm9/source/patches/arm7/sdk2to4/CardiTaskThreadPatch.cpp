@@ -8,8 +8,7 @@
 #include "patches/arm7/VerifySaveAsm.h"
 #include "patches/FunctionSignature.h"
 #include "patches/platform/LoaderPlatform.h"
-#include "patches/arm7/SaveOffsetToSdSectorAsm.h"
-#include "patches/OffsetToSectorRemapAsm.h"
+#include "patches/SaveOffsetToSdSectorAsm.h"
 #include "patches/arm7/CardiTaskThreadPatchAsm.h"
 #include "thumbInstructions.h"
 #include "CardiTaskThreadPatch.h"
@@ -95,14 +94,11 @@ void CardiTaskThreadPatch::ApplyPatch(PatchContext& patchContext)
     u32 patch1Size = SECTION_SIZE(patch_carditaskthread);
     void* patch1Address = patchContext.GetPatchHeap().Alloc(patch1Size);
     auto loaderPlatform = patchContext.GetLoaderPlatform();
-    const SdReadPatchCode* readPatchCode;
-    const SdWritePatchCode* writePatchCode;
-    const SectorRemapPatchCode* sectorRemapPatchCode;
-    readPatchCode = loaderPlatform->CreateSdReadPatchCode(
+    auto readPatchCode = loaderPlatform->CreateSdReadPatchCode(
         patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap());
-    writePatchCode = loaderPlatform->CreateSdWritePatchCode(
+    auto writePatchCode = loaderPlatform->CreateSdWritePatchCode(
         patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap());
-    sectorRemapPatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<SaveOffsetToSdSectorPatchCode>
+    auto sectorRemapPatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<SaveOffsetToSdSectorPatchCode>
     (
         patchContext.GetPatchHeap(),
         (const save_file_info_t*)((u32)SHARED_SAVE_FILE_INFO - 0x02F00000 + 0x02700000)

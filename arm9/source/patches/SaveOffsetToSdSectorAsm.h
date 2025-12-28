@@ -1,6 +1,6 @@
 #pragma once
 #include "sections.h"
-#include "../SectorRemapPatchCode.h"
+#include "SectorRemapPatchCode.h"
 #include "fileInfo.h"
 
 DEFINE_SECTION_SYMBOLS(saveoffsettosdsector);

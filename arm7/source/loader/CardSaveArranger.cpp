@@ -1,4 +1,5 @@
 #include "common.h"
+#include <algorithm>
 #include <string.h>
 #include "SaveList.h"
 #include "SaveListFactory.h"
@@ -9,10 +10,13 @@
 #define DEFAULT_SAVE_SIZE   (512 * 1024)
 #define SAVE_FILL_VALUE     0xFF
 
+static const u8 sNandSaveId[16] = { 0xEC, 0x00, 0x9E, 0xA1, 0x51, 0x65, 0x34, 0x35, 0x30, 0x35, 0x30, 0x31, 0x19, 0x19, 0x02, 0x0A };
+
 bool CardSaveArranger::SetupCardSave(u32 gameCode, const TCHAR* savePath) const
 {
     SaveList* saveList = SaveListFactory().CreateFromFile(SAVE_LIST_PATH);
     u32 saveSize = DEFAULT_SAVE_SIZE;
+    auto saveType = CardSaveType::None;
     if (saveList)
     {
         const auto saveListEntry = saveList->FindEntry(gameCode);
@@ -23,6 +27,7 @@ bool CardSaveArranger::SetupCardSave(u32 gameCode, const TCHAR* savePath) const
         }
         else
         {
+            saveType = saveListEntry->GetSaveType();
             saveSize = saveListEntry->GetSaveSize();
             saveListEntry->Dump();
         }
@@ -50,8 +55,9 @@ bool CardSaveArranger::SetupCardSave(u32 gameCode, const TCHAR* savePath) const
             return false;
         }
 
-        auto ffBuffer = std::make_unique<u8[]>(512);
-        memset(ffBuffer.get(), SAVE_FILL_VALUE, 512);
+        const u32 ffBufferSize = 32 * 1024;
+        auto ffBuffer = std::make_unique<u8[]>(ffBufferSize);
+        memset(ffBuffer.get(), SAVE_FILL_VALUE, ffBufferSize);
 
         u32 offset = initialSize;
         // Align to 512 bytes
@@ -68,17 +74,33 @@ bool CardSaveArranger::SetupCardSave(u32 gameCode, const TCHAR* savePath) const
             offset += remainingTo512;
         }
 
-        // Write in 512-byte blocks
+        // Write in up to 32kb blocks
         while (offset < saveSize)
         {
+            u32 bytesToWrite = std::min<u32>(saveSize - offset, ffBufferSize);
             UINT bytesWritten = 0;
-            if (f_write(file.get(), ffBuffer.get(), 512, &bytesWritten) != FR_OK ||
-                bytesWritten != 512)
+            if (f_write(file.get(), ffBuffer.get(), bytesToWrite, &bytesWritten) != FR_OK ||
+                bytesWritten != bytesToWrite)
             {
                 LOG_FATAL("Failed to expand save file\n");
                 return false;
             }
-            offset += 512;
+            offset += bytesToWrite;
+        }
+
+        if (saveType == CardSaveType::Nand)
+        {
+            // NAND save games have a read-only NAND save id at the end of their save area.
+            // Jam with the Band checks this id and errors if it cannot find it.
+            // See https://github.com/melonDS-emu/melonDS/blob/3a3388c4c50e8735af125c1af4d89e457f5e9035/src/NDSCart.cpp#L1067
+            UINT bytesWritten = 0;
+            if (f_lseek(file.get(), saveSize - 0x800) != FR_OK ||
+                f_write(file.get(), sNandSaveId, sizeof(sNandSaveId), &bytesWritten) != FR_OK ||
+                bytesWritten != sizeof(sNandSaveId))
+            {
+                LOG_FATAL("Failed to write NAND save id\n");
+                return false;
+            }
         }
     }
 
