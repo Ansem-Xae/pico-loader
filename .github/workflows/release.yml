@@ -20,6 +20,7 @@ jobs:
           "M3DS",
           "R4",
           "R4iDSN",
+          "STARGATE",
           "SUPERCARD"
         ]
     runs-on: ubuntu-latest
