@@ -19,12 +19,12 @@ public:
         stargate_readSdDma_miiCardDmaCopy32Ptr = (u32)miiCardDmaCopy32Ptr;
     }
 
-    const ReadSectorsDmaFunc GetSdReadDmaFunction() const override
+    const ReadSectorsDmaFunc GetReadSectorsDmaFunction() const override
     {
         return (const ReadSectorsDmaFunc)GetAddressAtTarget((void*)stargate_readSdDma);
     }
 
-    const ReadSectorsDmaFinishFunc GetSdReadDmaFinishFunction() const override
+    const ReadSectorsDmaFinishFunc GetReadSectorsDmaFinishFunction() const override
     {
         return (const ReadSectorsDmaFinishFunc)GetAddressAtTarget((void*)stargate_finishReadSdDma);
     }

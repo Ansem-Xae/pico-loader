@@ -24,7 +24,7 @@ public:
         return GetAddressAtTarget((void*)dspico_readSdSectorDma_pollSdDataReady);
     }
 
-    const IReadSectorsDmaPatchCode::ReadSectorsDmaFinishFunc GetSdReadDmaFinishFunction() const
+    const IReadSectorsDmaPatchCode::ReadSectorsDmaFinishFunc GetReadSectorsDmaFinishFunction() const
     {
         return (const IReadSectorsDmaPatchCode::ReadSectorsDmaFinishFunc)GetAddressAtTarget((void*)dspico_finishReadSdSectorDma);
     }
@@ -36,18 +36,18 @@ public:
     DSPicoReadSdSectorDmaPatchCode(PatchHeap& patchHeap,
         const DSPicoReadSdSectorDmaPollSdDataReadyPatchCode* pollSdDataReadyPatchCode, const void* miiCardDmaCopy32Ptr)
         : PatchCode(SECTION_START(dspico_readsdsectordma), SECTION_SIZE(dspico_readsdsectordma), patchHeap)
-        , _sdReadDmaFinishFunc(pollSdDataReadyPatchCode->GetSdReadDmaFinishFunction())
+        , _sdReadDmaFinishFunc(pollSdDataReadyPatchCode->GetReadSectorsDmaFinishFunction())
     {
         dspico_readSdSectorDma_miiCardDmaCopy32Ptr = (u32)miiCardDmaCopy32Ptr;
         dspico_readSdSectorDma_pollSdDataReadyPtr = (u32)pollSdDataReadyPatchCode->GetPollSdDataReadyFunction();
     }
 
-    const ReadSectorsDmaFunc GetSdReadDmaFunction() const override
+    const ReadSectorsDmaFunc GetReadSectorsDmaFunction() const override
     {
         return (const ReadSectorsDmaFunc)GetAddressAtTarget((void*)dspico_readSdSectorDma);
     }
 
-    const ReadSectorsDmaFinishFunc GetSdReadDmaFinishFunction() const override
+    const ReadSectorsDmaFinishFunc GetReadSectorsDmaFinishFunction() const override
     {
         return _sdReadDmaFinishFunc;
     }

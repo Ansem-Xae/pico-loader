@@ -25,9 +25,9 @@ public:
     {
         patch_cardisetcarddma_cardi_common = (u32)cardiCommonPointer;
         patch_cardisetcarddma_rom_offset_to_sd_sector_asm_address = (u32)sectorRemapPatchCode->GetRemapFunction();
-        patch_cardisetcarddma_sdreaddma_asm_address = (u32)readSectorsDmaPatchCode->GetSdReadDmaFunction();
+        patch_cardisetcarddma_sdreaddma_asm_address = (u32)readSectorsDmaPatchCode->GetReadSectorsDmaFunction();
         patch_cardionreadcard_osdisableirqmask_address = (u32)osDisableIrqMaskPointer;
-        patch_cardionreadcard_sdreaddma_finish_asm_address = (u32)readSectorsDmaPatchCode->GetSdReadDmaFinishFunction();
+        patch_cardionreadcard_sdreaddma_finish_asm_address = (u32)readSectorsDmaPatchCode->GetReadSectorsDmaFinishFunction();
     }
 
     const void* GetCardiSetCardDmaFunction() const

@@ -18,9 +18,9 @@ public:
 
     /// @brief Gets a pointer to the dma SD read function in the patch code.
     /// @return The pointer to the dma SD read function.
-    virtual const ReadSectorsDmaFunc GetSdReadDmaFunction() const = 0;
+    virtual const ReadSectorsDmaFunc GetReadSectorsDmaFunction() const = 0;
 
     /// @brief Gets a pointer to the dma SD read finish function in the patch code.
     /// @return The pointer to the dma SD read finish function.
-    virtual const ReadSectorsDmaFinishFunc GetSdReadDmaFinishFunction() const = 0;
+    virtual const ReadSectorsDmaFinishFunc GetReadSectorsDmaFinishFunction() const = 0;
 };
