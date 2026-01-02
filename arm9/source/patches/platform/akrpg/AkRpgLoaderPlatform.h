@@ -1,5 +1,5 @@
 #pragma once
-#include "../acekard-common/IoRPGLoaderPlatform.h"
+#include "../acekard-common/IoRpgLoaderPlatform.h"
 #include "AkRpgReadSdPatchCode.h"
 #include "AkRpgSdReadSectorPatchCode.h"
 #include "AkRpgWriteSdPatchCode.h"

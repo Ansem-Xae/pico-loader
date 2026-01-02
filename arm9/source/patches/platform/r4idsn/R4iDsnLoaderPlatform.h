@@ -1,6 +1,6 @@
 #pragma once
 #include "common.h"
-#include "../acekard-common/IoRPGLoaderPlatform.h"
+#include "../acekard-common/IoRpgLoaderPlatform.h"
 #include "R4iDsnReadSdPatchCode.h"
 #include "R4iDsnSdReadSectorPatchCode.h"
 #include "R4iDsnWriteSdPatchCode.h"

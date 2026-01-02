@@ -3,7 +3,7 @@
 #include "DsttDefinitions.h"
 #include "../SdioDefinitions.h"
 #include "waitByLoop.h"
-#include "DSTTLoaderPlatform.h"
+#include "DsttLoaderPlatform.h"
 
 /// @brief Sets the mode of the SD host. Mostly used for SDIO commands.
 /// @param sdio An SDIO command to send, if any. Set 0 otherwise.
