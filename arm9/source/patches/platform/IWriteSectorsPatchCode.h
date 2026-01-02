@@ -1,6 +1,6 @@
 #pragma once
 
-/// @brief Abstract base class for patch code implementing sector writes
+/// @brief Interface for patch code implementing sector writes.
 class IWriteSectorsPatchCode
 {
 protected:

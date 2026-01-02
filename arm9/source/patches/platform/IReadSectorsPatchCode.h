@@ -1,6 +1,6 @@
 #pragma once
 
-/// @brief Abstract base class for patch code implementing sector reads
+/// @brief Interface for patch code implementing sector reads.
 class IReadSectorsPatchCode
 {
 protected:

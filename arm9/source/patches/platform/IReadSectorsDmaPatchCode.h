@@ -1,6 +1,6 @@
 #pragma once
 
-/// @brief Abstract base class for patch code implementing dma sector reads
+/// @brief Interface for patch code implementing dma sector reads.
 class IReadSectorsDmaPatchCode
 {
 protected:
