@@ -34,11 +34,11 @@ class OSResetSystemPatchCode : public PatchCode
 {
 public:
     OSResetSystemPatchCode(PatchHeap& patchHeap, const loader_info_t* loaderInfo,
-        const IReadSectorsPatchCode* sdReadPatchCode, const OSResetSystemPart2PatchCode* part2PatchCode)
+        const IReadSectorsPatchCode* readSectorsPatchCode, const OSResetSystemPart2PatchCode* part2PatchCode)
         : PatchCode(SECTION_START(patch_osresetsystem), SECTION_SIZE(patch_osresetsystem), patchHeap)
     {
         patch_osresetsystem_loader_info_address = loaderInfo;
-        patch_osresetsystem_readSdSectors_address = (u32)sdReadPatchCode->GetReadSectorsFunction();
+        patch_osresetsystem_readSdSectors_address = (u32)readSectorsPatchCode->GetReadSectorsFunction();
         patch_osresetsystem_bootPicoLoader_address = (u32)part2PatchCode->GetOSResetSystemPart2Function();
     }
 
