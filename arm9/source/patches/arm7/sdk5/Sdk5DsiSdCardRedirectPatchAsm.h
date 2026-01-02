@@ -1,8 +1,8 @@
 #pragma once
-#include "patches/PatchCode.h"
 #include "sections.h"
-#include "patches/platform/SdReadPatchCode.h"
-#include "patches/platform/SdWritePatchCode.h"
+#include "patches/PatchCode.h"
+#include "patches/platform/IReadSectorsPatchCode.h"
+#include "patches/platform/IWriteSectorsPatchCode.h"
 
 DEFINE_SECTION_SYMBOLS(patch_dsisdredirect);
 
@@ -16,12 +16,12 @@ extern u32 __patch_dsisdredirect_control_get_drive_struct_address;
 class Sdk5DsiSdCardRedirectPatchCode : public PatchCode
 {
 public:
-    Sdk5DsiSdCardRedirectPatchCode(PatchHeap& patchHeap, const SdReadPatchCode* sdReadPatchCode,
-        const SdWritePatchCode* sdWritePatchCode, u32 getDriveStructAddress)
+    Sdk5DsiSdCardRedirectPatchCode(PatchHeap& patchHeap, const IReadSectorsPatchCode* readSectorsPatchCode,
+        const IWriteSectorsPatchCode* writeSectorsPatchCode, u32 getDriveStructAddress)
         : PatchCode(SECTION_START(patch_dsisdredirect), SECTION_SIZE(patch_dsisdredirect), patchHeap)
     {
-        __patch_dsisdredirect_io_readsd_asm_address = (u32)sdReadPatchCode->GetSdReadFunction();
-        __patch_dsisdredirect_io_writesd_asm_address =  (u32)sdWritePatchCode->GetSdWriteFunction();
+        __patch_dsisdredirect_io_readsd_asm_address = (u32)readSectorsPatchCode->GetReadSectorsFunction();
+        __patch_dsisdredirect_io_writesd_asm_address =  (u32)writeSectorsPatchCode->GetWriteSectorFunction();
         __patch_dsisdredirect_control_get_drive_struct_address = getDriveStructAddress;
     }
 
