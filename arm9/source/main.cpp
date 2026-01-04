@@ -27,6 +27,8 @@
 #include "errorDisplay/ErrorDisplay.h"
 #include "LoaderInfo.h"
 #include "jumpToArm9EntryPoint.h"
+#include "patches/homebrew/BootstubPatchCode.h"
+#include "HomebrewBootstub.h"
 
 #define HANDSHAKE_PART0     0xA
 #define HANDSHAKE_PART1     0xB
@@ -231,6 +233,37 @@ static void handleBootCommand()
     bootArm9();
 }
 
+static void handleApplyHomebrewPatches(u32 dldiRequiredSpace)
+{
+    // Insert bootstub
+    PatchHeap patchHeap;
+    PatchCodeCollection patchCodeCollection;
+    void* patchSpace = (void*)&HOMEBREW_BOOTSTUB[1];
+    auto romHeader = (const nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader;
+    if (!romHeader->IsTwlRom())
+    {
+        patchSpace = (u8*)patchSpace - 0x2F00000 + 0x2300000;
+    }
+    patchHeap.AddFreeSpace(patchSpace, 32 * 1024 - sizeof(homebrew_bootstub_t));
+
+    void* dldi = patchHeap.Alloc(dldiRequiredSpace);
+    char* launcherPath = (char*)patchHeap.Alloc(256);
+
+    auto bootstubPatchCode = patchCodeCollection.AddUniquePatchCode<BootstubPatchCode>(
+        patchHeap, dldi, launcherPath, &sLoaderInfo,
+        sLoaderPlatform->CreateSdReadPatchCode(patchCodeCollection, patchHeap));
+
+    HOMEBREW_BOOTSTUB->bootSig = HOMEBREW_BOOTSTUB_BOOTSIG;
+    HOMEBREW_BOOTSTUB->arm9Reboot = (void*)bootstubPatchCode->GetArm9RebootFunction();
+    HOMEBREW_BOOTSTUB->arm7Reboot = (void*)bootstubPatchCode->GetArm7RebootFunction();
+    HOMEBREW_BOOTSTUB->bootSize = 32 * 1024 - sizeof(homebrew_bootstub_t);
+
+    patchCodeCollection.CopyAllToTarget();
+
+    ipc_sendWordDirect((u32)dldi);
+    ipc_sendWordDirect((u32)launcherPath);
+}
+
 static void handleArm7Command(u32 command)
 {
     switch (command)
@@ -293,6 +326,12 @@ static void handleArm7Command(u32 command)
         case IPC_COMMAND_ARM9_BOOT:
         {
             handleBootCommand();
+            break;
+        }
+        case IPC_COMMAND_ARM9_APPLY_HOMEBREW_PATCHES:
+        {
+            u32 dldiRequiredSpace = receiveFromArm7();
+            handleApplyHomebrewPatches(dldiRequiredSpace);
             break;
         }
     }

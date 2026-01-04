@@ -344,6 +344,7 @@ void NdsLoader::Load(BootMode bootMode)
     if (isHomebrew)
     {
         InsertArgv();
+        HandleHomebrewPatching();
     }
 
     HandleDldiPatching();
@@ -427,6 +428,22 @@ void NdsLoader::InsertArgv()
     HOMEBREW_ARGV->magic = HOMEBREW_ARGV_MAGIC;
     HOMEBREW_ARGV->commandLine = (char*)argDst;
     HOMEBREW_ARGV->length = argSize;
+}
+
+void NdsLoader::HandleHomebrewPatching()
+{
+    sendToArm9(IPC_COMMAND_ARM9_APPLY_HOMEBREW_PATCHES);
+    sendToArm9(16 * 1024); // required dldi space
+    void* dldiSpace = (void*)receiveFromArm9();
+    char* launcherPath = (char*)receiveFromArm9();
+    if (dldiSpace != nullptr)
+    {
+        dldi_copyTo(dldiSpace);
+    }
+    if (launcherPath != nullptr)
+    {
+        strncpy(launcherPath, _launcherPath, 256);
+    }
 }
 
 void NdsLoader::ApplyArm7Patches()

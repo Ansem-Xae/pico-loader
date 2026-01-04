@@ -1,7 +1,10 @@
 #pragma once
 
 /// @brief The Pico Loader API version supported by this header file.
-#define PICO_LOADER_API_VERSION     1
+#define PICO_LOADER_API_VERSION     2
+
+/// @brief The minimum Pico Loader API version that supports the launcherPath setting.
+#define PICO_LOADER_LAUNCHER_PATH_MIN_API_VERSION   2
 
 /// @brief Enum to specify the drive to boot from.
 typedef enum
@@ -52,4 +55,22 @@ typedef struct
 
     /// @brief The load params, see \see pload_params_t.
     pload_params_t loadParams;
+
+    // === api version 2 ===
+
+    /// @brief The path of the rom to return to when exiting an application.
+    char launcherPath[256];
 } pload_header7_t;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+static inline bool pload_supportsLauncherPath(const pload_header7_t* header)
+{
+    return header->apiVersion >= PICO_LOADER_LAUNCHER_PATH_MIN_API_VERSION;
+}
+
+#ifdef __cplusplus
+}
+#endif

@@ -26,6 +26,13 @@ public:
         _savePath = savePath;
     }
 
+    /// @brief Sets the \p launcherPath to use.
+    /// @param launcherPath The launcher path to use.
+    void SetLauncherPath(const TCHAR* launcherPath)
+    {
+        _launcherPath = launcherPath;
+    }
+
     /// @brief Sets the argv arguments to pass to the rom.
     /// @param arguments The argv arguments.
     /// @param argumentsLength The length of the argv arguments.
@@ -41,8 +48,9 @@ public:
 
 private:
     FIL _romFile;
-    const TCHAR* _romPath;
-    const TCHAR* _savePath;
+    const TCHAR* _romPath = nullptr;
+    const TCHAR* _savePath = nullptr;
+    const TCHAR* _launcherPath = nullptr;
     u32 _argumentsLength = 0;
     const char* _arguments = nullptr;
     nds_header_twl_t _romHeader;
@@ -71,6 +79,7 @@ private:
         char driveLetter, const char* deviceName, const char* path, u8 flags, u8 accessRights);
     void SetupDsiDeviceList();
     void InsertArgv();
+    void HandleHomebrewPatching();
     bool TrySetupDsiWareSave();
     bool TryDecryptSecureArea();
     ConsoleRegion GetRomRegion(u32 gameCode);

@@ -3,6 +3,7 @@
 
 bool dldi_init();
 bool dldi_patchTo(dldi_header_t* stub);
+void dldi_copyTo(void* target);
 
 #ifdef __cplusplus
 extern "C" {
