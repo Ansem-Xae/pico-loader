@@ -10,9 +10,5 @@ extern u8 __bss_size[];
 pload_header7_t gLoaderHeader
 {
     .entryPoint = (void*)&_start,
-    .apiVersion = PICO_LOADER_API_VERSION,
-    .v2 =
-    {
-        .launcherPath = "/_picoboot.nds"
-    }
+    .apiVersion = PICO_LOADER_API_VERSION
 };

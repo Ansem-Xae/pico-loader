@@ -436,17 +436,21 @@ void NdsLoader::InsertArgv()
 
 void NdsLoader::HandleHomebrewPatching()
 {
-    sendToArm9(IPC_COMMAND_ARM9_APPLY_HOMEBREW_PATCHES);
-    sendToArm9(16 * 1024); // required dldi space
-    void* dldiSpace = (void*)receiveFromArm9();
-    char* launcherPath = (char*)receiveFromArm9();
-    if (dldiSpace != nullptr)
+    if (_launcherPath != nullptr && _launcherPath[0] != 0)
     {
-        dldi_copyTo(dldiSpace);
-    }
-    if (launcherPath != nullptr)
-    {
-        strncpy(launcherPath, _launcherPath, 256);
+        sendToArm9(IPC_COMMAND_ARM9_SETUP_HOMEBREW_BOOTSTUB);
+        sendToArm9(16 * 1024); // required dldi space
+        void* dldiSpace = (void*)receiveFromArm9();
+        char* launcherPath = (char*)receiveFromArm9();
+        if (dldiSpace != nullptr)
+        {
+            dldi_copyTo(dldiSpace);
+        }
+        if (launcherPath != nullptr)
+        {
+            strncpy(launcherPath, _launcherPath, 256);
+            launcherPath[255] = 0;
+        }
     }
 }
 

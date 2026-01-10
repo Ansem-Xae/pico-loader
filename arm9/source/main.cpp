@@ -233,9 +233,8 @@ static void handleBootCommand()
     bootArm9();
 }
 
-static void handleApplyHomebrewPatches(u32 dldiRequiredSpace)
+static void handleSetupHomebrewBootstub(u32 dldiRequiredSpace)
 {
-    // Insert bootstub
     PatchHeap patchHeap;
     PatchCodeCollection patchCodeCollection;
     void* patchSpace = (void*)&HOMEBREW_BOOTSTUB[1];
@@ -328,10 +327,10 @@ static void handleArm7Command(u32 command)
             handleBootCommand();
             break;
         }
-        case IPC_COMMAND_ARM9_APPLY_HOMEBREW_PATCHES:
+        case IPC_COMMAND_ARM9_SETUP_HOMEBREW_BOOTSTUB:
         {
             u32 dldiRequiredSpace = receiveFromArm7();
-            handleApplyHomebrewPatches(dldiRequiredSpace);
+            handleSetupHomebrewBootstub(dldiRequiredSpace);
             break;
         }
     }
