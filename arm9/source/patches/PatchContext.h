@@ -11,9 +11,9 @@ class PatchContext
 {
 public:
     PatchContext(void* data, u32 dataSize, void* twlData, u32 twlDataSize,
-        SdkVersion sdkVersion, u32 gameCode, const LoaderPlatform* loaderPlatform)
+        SdkVersion sdkVersion, u32 gameCode, u8 gameRevision, const LoaderPlatform* loaderPlatform)
         : _data(data), _dataSize(dataSize), _twlData(twlData), _twlDataSize(twlDataSize)
-        , _sdkVersion(sdkVersion), _gameCode(gameCode), _loaderPlatform(loaderPlatform) { }
+        , _sdkVersion(sdkVersion), _gameCode(gameCode), _gameRevision(gameRevision), _loaderPlatform(loaderPlatform) { }
 
     /// @brief Tries to find the given \p pattern of the given \p byteLength in the ntr region.
     /// @param pattern The pattern to find.
@@ -43,6 +43,10 @@ public:
     /// @return The game code of the rom that is being patched.
     constexpr u32 GetGameCode() const { return _gameCode; }
 
+    /// @brief Returns the game revision of the rom that is being patched.
+    /// @return The game revision of the rom that is being patched.
+    constexpr u8 GetGameRevision() const { return _gameRevision; }
+
     /// @brief Returns the loader platform that should be used for the patches.
     /// @return The loader platform that should be used for the patches.
     constexpr const LoaderPlatform* GetLoaderPlatform() { return _loaderPlatform; }
@@ -54,6 +58,7 @@ private:
     u32 _twlDataSize;
     SdkVersion _sdkVersion;
     u32 _gameCode;
+    u8 _gameRevision;
 
     PatchHeap _patchHeap;
     PatchCodeCollection _patchCodeCollection;

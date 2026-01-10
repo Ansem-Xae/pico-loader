@@ -116,6 +116,7 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
         arm9iSize,
         sdkVersion,
         romHeader->gameCode,
+        romHeader->softwareVersion,
         loaderPlatform
     };
     PatchCollection patchCollection;

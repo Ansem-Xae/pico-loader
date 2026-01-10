@@ -39,6 +39,7 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform) const
         (romHeader->IsTwlRom()) ? twlRomHeader->arm7iSize : 0,
         sdkVersion,
         romHeader->gameCode,
+        romHeader->softwareVersion,
         loaderPlatform
     };
     void* patchSpaceStart = nullptr;
