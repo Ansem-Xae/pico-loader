@@ -11,5 +11,8 @@ pload_header7_t gLoaderHeader
 {
     .entryPoint = (void*)&_start,
     .apiVersion = PICO_LOADER_API_VERSION,
-    .launcherPath = "/_picoboot.nds"
+    .v2 =
+    {
+        .launcherPath = "/_picoboot.nds"
+    }
 };
