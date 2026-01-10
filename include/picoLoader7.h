@@ -39,6 +39,7 @@ typedef struct
 typedef struct
 {
     /// @brief The path of the rom to return to when exiting an application.
+    ///        When this path is not set, no bootstub will be patched into homebrew applications.
     char launcherPath[256];
 } pload_header7_v2_t;
 
