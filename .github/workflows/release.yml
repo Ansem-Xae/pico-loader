@@ -21,7 +21,11 @@ jobs:
           "R4",
           "R4iDSN",
           "STARGATE",
-          "SUPERCARD"
+          "SUPERCARD",
+          "SUPERCARDCF",
+          "M3CF",
+          "MMCF",
+          "MPCF"
         ]
     runs-on: ubuntu-latest
     container: skylyrac/blocksds:slim-v1.13.1
