@@ -6,6 +6,7 @@
 #include "patches/arm9/RomOffsetToSdSectorPatchCode.h"
 #include "patches/OffsetToSectorRemapPatchCode.h"
 #include "patches/arm9/FixCp15Asm.h"
+#include "gameCode.h"
 #include "CardiReadCardPatchAsm.h"
 #include "CardiReadCardPatch.h"
 
@@ -19,6 +20,7 @@ static const u32 sCARDiReadCardPatternSdk3027530Thumb[] = { 0xB082B5F8u, 0x90019
 static const u32 sCARDiReadCardPatternSdk4002774[] = { 0xE92D4070u, 0xE59F40D0u, 0xE1A06000u, 0xE3A00C02u };
 static const u32 sCARDiReadCardPatternSdk4017530[] = { 0xE92D4070u, 0xE59F40D8u, 0xE1A06000u, 0xE3A00C02u };
 static const u32 sCARDiReadCardPatternSdk4017530Thumb[] = { 0xB082B5F8u, 0x90019000u, 0x90013020u, 0x69C24827u };
+static const u32 sCARDiReadCardPatternSdk4027531ThumbInlined[] = { 0xB082B5F8u, 0x90019000u, 0x90013020u, 0x69C14841u };
 static const u32 sCARDiReadCardPatternSdk4027539SpiritTracks[] = { 0xE92D4070u, 0xE59F40D4u, 0xE1A06000u, 0xE3A00C02u };
 
 void CardiReadCardPatch::TryPattern(PatchContext& patchContext, const u32* pattern, u32 byteLength)
@@ -30,59 +32,71 @@ void CardiReadCardPatch::TryPattern(PatchContext& patchContext, const u32* patte
 
 bool CardiReadCardPatch::FindPatchTarget(PatchContext& patchContext)
 {
-    if (patchContext.GetSdkVersion() >= 0x4017530)
-        TryPattern(patchContext, sCARDiReadCardPatternSdk4017530, sizeof(sCARDiReadCardPatternSdk4017530));
-    else if (patchContext.GetSdkVersion() >= 0x4002774)
-        TryPattern(patchContext, sCARDiReadCardPatternSdk4002774, sizeof(sCARDiReadCardPatternSdk4002774));
+    if (patchContext.GetGameCode() == GAMECODE("A4VJ"))
+    {
+        // Shaberu! DS Oryouri Navi (Japan) has a spurious match
+        _foundPattern = sCARDiReadCardPatternUnknown;
+        _thumb = false;
+        _cardiReadCard = (u32*)(patchContext.GetGameRevision() == 0 ? 0x020DBD5C : 0x020DBD4C);
+    }
     else
-        TryPattern(patchContext, sCARDiReadCardPatternSdk20029A7, sizeof(sCARDiReadCardPatternSdk20029A7));
-
-    if (!_cardiReadCard)
     {
         if (patchContext.GetSdkVersion() >= 0x4017530)
-            TryPattern(patchContext, sCARDiReadCardPatternSdk4017530Thumb, sizeof(sCARDiReadCardPatternSdk4017530Thumb));
-        else if (patchContext.GetSdkVersion() >= 0x3027530)
-            TryPattern(patchContext, sCARDiReadCardPatternSdk3027530Thumb, sizeof(sCARDiReadCardPatternSdk3027530Thumb));
-        else if (patchContext.GetSdkVersion() >= 0x2004F4C)
-            TryPattern(patchContext, sCARDiReadCardPatternSdk2004F4CThumb, sizeof(sCARDiReadCardPatternSdk2004F4CThumb));
-
-        if (_cardiReadCard)
-            _thumb = true;
-    }
-
-    if (!_cardiReadCard)
-    {
-        // if still nothing found try some of the patterns that appear all over the place
-        TryPattern(patchContext, sCARDiReadCardPatternUnknown, sizeof(sCARDiReadCardPatternUnknown));
-        if (!_cardiReadCard)
+            TryPattern(patchContext, sCARDiReadCardPatternSdk4017530, sizeof(sCARDiReadCardPatternSdk4017530));
+        else if (patchContext.GetSdkVersion() >= 0x4002774)
             TryPattern(patchContext, sCARDiReadCardPatternSdk4002774, sizeof(sCARDiReadCardPatternSdk4002774));
-        if (!_cardiReadCard)
+        else
             TryPattern(patchContext, sCARDiReadCardPatternSdk20029A7, sizeof(sCARDiReadCardPatternSdk20029A7));
-        if (patchContext.GetSdkVersion().GetMajor() >= SDK_VERSION_MAJOR_NITRO_4)
+
+        if (!_cardiReadCard)
         {
-            if (!_cardiReadCard)
-                TryPattern(patchContext, sCARDiReadCardPatternSdk4027539SpiritTracks, sizeof(sCARDiReadCardPatternSdk4027539SpiritTracks));
+            if (patchContext.GetSdkVersion() >= 0x4017530)
+                TryPattern(patchContext, sCARDiReadCardPatternSdk4017530Thumb, sizeof(sCARDiReadCardPatternSdk4017530Thumb));
+            else if (patchContext.GetSdkVersion() >= 0x3027530)
+                TryPattern(patchContext, sCARDiReadCardPatternSdk3027530Thumb, sizeof(sCARDiReadCardPatternSdk3027530Thumb));
+            else if (patchContext.GetSdkVersion() >= 0x2004F4C)
+                TryPattern(patchContext, sCARDiReadCardPatternSdk2004F4CThumb, sizeof(sCARDiReadCardPatternSdk2004F4CThumb));
+
+            if (_cardiReadCard)
+                _thumb = true;
         }
 
-        if (patchContext.GetSdkVersion().GetMajor() <= SDK_VERSION_MAJOR_NITRO_2)
+        if (!_cardiReadCard)
         {
+            // if still nothing found try some of the patterns that appear all over the place
+            TryPattern(patchContext, sCARDiReadCardPatternUnknown, sizeof(sCARDiReadCardPatternUnknown));
             if (!_cardiReadCard)
-                TryPattern(patchContext, sCARDiReadCardPatternSdk2004F4DDebug, sizeof(sCARDiReadCardPatternSdk2004F4DDebug));
+                TryPattern(patchContext, sCARDiReadCardPatternSdk4002774, sizeof(sCARDiReadCardPatternSdk4002774));
             if (!_cardiReadCard)
-                TryPattern(patchContext, sCARDiReadCardPatternSdk2004E8BPingPals, sizeof(sCARDiReadCardPatternSdk2004E8BPingPals));
+                TryPattern(patchContext, sCARDiReadCardPatternSdk20029A7, sizeof(sCARDiReadCardPatternSdk20029A7));
+            if (patchContext.GetSdkVersion().GetMajor() >= SDK_VERSION_MAJOR_NITRO_4)
+            {
+                if (!_cardiReadCard)
+                    TryPattern(patchContext, sCARDiReadCardPatternSdk4027539SpiritTracks, sizeof(sCARDiReadCardPatternSdk4027539SpiritTracks));
+            }
+
+            if (patchContext.GetSdkVersion().GetMajor() <= SDK_VERSION_MAJOR_NITRO_2)
+            {
+                if (!_cardiReadCard)
+                    TryPattern(patchContext, sCARDiReadCardPatternSdk2004F4DDebug, sizeof(sCARDiReadCardPatternSdk2004F4DDebug));
+                if (!_cardiReadCard)
+                    TryPattern(patchContext, sCARDiReadCardPatternSdk2004E8BPingPals, sizeof(sCARDiReadCardPatternSdk2004E8BPingPals));
+            }
         }
-    }
 
-    if (!_cardiReadCard)
-    {
-        TryPattern(patchContext, sCARDiReadCardPatternSdk2004F4CThumb, sizeof(sCARDiReadCardPatternSdk2004F4CThumb));
         if (!_cardiReadCard)
-            TryPattern(patchContext, sCARDiReadCardPatternSdk3027530Thumb, sizeof(sCARDiReadCardPatternSdk3027530Thumb));
-        if (!_cardiReadCard)
-            TryPattern(patchContext, sCARDiReadCardPatternSdk2027533ThumbChouSoujuu, sizeof(sCARDiReadCardPatternSdk2027533ThumbChouSoujuu));
+        {
+            TryPattern(patchContext, sCARDiReadCardPatternSdk2004F4CThumb, sizeof(sCARDiReadCardPatternSdk2004F4CThumb));
+            if (!_cardiReadCard)
+                TryPattern(patchContext, sCARDiReadCardPatternSdk3027530Thumb, sizeof(sCARDiReadCardPatternSdk3027530Thumb));
+            if (!_cardiReadCard)
+                TryPattern(patchContext, sCARDiReadCardPatternSdk2027533ThumbChouSoujuu, sizeof(sCARDiReadCardPatternSdk2027533ThumbChouSoujuu));
+            if (!_cardiReadCard)
+                TryPattern(patchContext, sCARDiReadCardPatternSdk4027531ThumbInlined, sizeof(sCARDiReadCardPatternSdk4027531ThumbInlined));
 
-        if (_cardiReadCard)
-            _thumb = true;
+            if (_cardiReadCard)
+                _thumb = true;
+        }
     }
 
     if (_cardiReadCard)
@@ -142,42 +156,53 @@ void CardiReadCardPatch::ApplyPatch(PatchContext& patchContext)
     if (_thumb)
     {
         u32 patchOffset;
-        u32 cardiCommonOffset;
         if (_foundPattern == sCARDiReadCardPatternSdk4017530Thumb)
         {
             patchOffset = 0x36;
-            cardiCommonOffset = 0x74;
             patch_cardireadcard_return_offset = THUMB_MOVS_IMM(THUMB_R0, 0x3C);
             patch_cardireadcard_mov_src_to_r0 = THUMB_MOVS_REG(THUMB_R0, THUMB_R1); // src
             patch_cardireadcard_mov_dst_to_r1 = THUMB_MOVS_REG(THUMB_R1, THUMB_R4); // dst
-            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 0);
+            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 8); // r3 from the stack
             patch_cardireadcard_adjust_cardicommon_offset = THUMB_NOP;
-            patch_cardireadcard_mov_r3_to_dst = THUMB_STR_SP_IMM(THUMB_R3, 4);
+            patch_cardireadcard_mov_r3_to_dst = THUMB_STR_SP_IMM(THUMB_R3, 0xC); // copy to r4 on the stack
+            *(u16*)((u8*)_cardiReadCard + patchOffset + 0) = THUMB_LDR_PC_IMM(THUMB_R3, 0x74); // ldr r3,= cardi_common
         }
         else if (_foundPattern == sCARDiReadCardPatternSdk3027530Thumb)
         {
             patchOffset = 0x36;
-            cardiCommonOffset = 0x6C;
             patch_cardireadcard_return_offset = THUMB_MOVS_IMM(THUMB_R0, 0x36);
             patch_cardireadcard_mov_src_to_r0 = THUMB_MOVS_REG(THUMB_R0, THUMB_R1); // src
             patch_cardireadcard_mov_dst_to_r1 = THUMB_MOVS_REG(THUMB_R1, THUMB_R4); // dst
-            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 0);
+            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 8); // r3 from the stack
             patch_cardireadcard_adjust_cardicommon_offset = THUMB_NOP;
-            patch_cardireadcard_mov_r3_to_dst = THUMB_STR_SP_IMM(THUMB_R3, 4);
+            patch_cardireadcard_mov_r3_to_dst = THUMB_STR_SP_IMM(THUMB_R3, 0xC); // copy to r4 on the stack
+            *(u16*)((u8*)_cardiReadCard + patchOffset + 0) = THUMB_LDR_PC_IMM(THUMB_R3, 0x6C); // ldr r3,= cardi_common
         }
         else if (_foundPattern == sCARDiReadCardPatternSdk2004F4CThumb)
         {
             patchOffset = 0x36;
-            cardiCommonOffset = 0;
             patch_cardireadcard_return_offset = THUMB_MOVS_IMM(THUMB_R0, 0x2E);
             patch_cardireadcard_mov_src_to_r0 = THUMB_MOVS_REG(THUMB_R0, THUMB_R1); // src
             patch_cardireadcard_mov_dst_to_r1 = THUMB_MOVS_REG(THUMB_R1, THUMB_R5); // dst
-            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 8); // r6 from stack
+            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 0x10); // r6 from stack
             if (patchContext.GetSdkVersion().GetMajor() <= SDK_VERSION_MAJOR_NITRO_2)
                 patch_cardireadcard_adjust_cardicommon_offset = THUMB_SUBS_IMM(THUMB_R6, THUMB_R6, 4);
             else
                 patch_cardireadcard_adjust_cardicommon_offset = THUMB_NOP;
             patch_cardireadcard_mov_r3_to_dst = THUMB_MOVS_REG(THUMB_R5, THUMB_R3);
+            *(u16*)((u8*)_cardiReadCard + patchOffset + 0) = THUMB_NOP;
+        }
+        else if (_foundPattern == sCARDiReadCardPatternSdk4027531ThumbInlined)
+        {
+            // This variant has a lot of inlining
+            patchOffset = 0x36;
+            patch_cardireadcard_return_offset = THUMB_MOVS_IMM(THUMB_R0, 0x64);
+            patch_cardireadcard_mov_src_to_r0 = THUMB_LDR_SP_IMM(THUMB_R0, 8); // src, r3 from the stack
+            patch_cardireadcard_mov_dst_to_r1 = THUMB_LDR_SP_IMM(THUMB_R1, 4); // dst, r2 from the stack
+            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 0); // r1 from the stack
+            patch_cardireadcard_adjust_cardicommon_offset = THUMB_NOP;
+            patch_cardireadcard_mov_r3_to_dst = THUMB_STR_SP_IMM(THUMB_R3, 4); // copy to r2 on the stack
+            *(u16*)((u8*)_cardiReadCard + patchOffset + 0) = THUMB_LDR_PC_IMM(THUMB_R1, 0xDC); // ldr r1,= cardi_common
         }
         else
         {
@@ -185,7 +210,6 @@ void CardiReadCardPatch::ApplyPatch(PatchContext& patchContext)
             while (1);
         }
 
-        *(u16*)((u8*)_cardiReadCard + patchOffset + 0) = cardiCommonOffset == 0 ? THUMB_NOP : THUMB_LDR_PC_IMM(THUMB_R3, cardiCommonOffset); // ldr r0,= cardi_common
         *(u16*)((u8*)_cardiReadCard + patchOffset + 2) = THUMB_LDR_PC_IMM(THUMB_R0, 0); // ldr r0,= entryAddress
         *(u16*)((u8*)_cardiReadCard + patchOffset + 4) = THUMB_BLX(THUMB_R0);
         *(u32*)((u8*)_cardiReadCard + patchOffset + 6) = entryAddress;

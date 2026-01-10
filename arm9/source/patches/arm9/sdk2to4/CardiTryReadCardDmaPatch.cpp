@@ -36,6 +36,7 @@ static const u32 sCARDiTryReadCardDmaPatternSdkThumb[] = { 0xB084B5F8u, 0x483D90
 static const u32 sCARDiTryReadCardDmaPatternSdk4007531Thumb[] = { 0xB084B5F8u, 0x483E9000u, 0x6A446A05u, 0x90032000u };
 static const u32 sCARDiTryReadCardDmaPatternSdk4017530Thumb[] = { 0xB084B5F8u, 0x48479000u, 0x6A446A05u, 0x90032000u };
 static const u32 sCARDiTryReadCardDmaPatternSdk4027530Thumb[] = { 0xB084B5F8u, 0x48479000u, 0x6A446A05u, 0x90032000u };
+static const u32 sCARDiTryReadCardDmaPatternSdk4027531ThumbInlined[] = { 0xB083B5F0u, 0x485D9000u, 0x6A062500u, 0x1C286A44u };
 
 static const u16 sReturnFalsePatchThumb[] = { THUMB_MOVS_IMM(0, 0), THUMB_BX_LR };
 static const u32 sReturnFalsePatchArm[] = { 0xE3A00000, 0xE12FFF1E }; // mov r0, #0; bx lr
@@ -141,6 +142,10 @@ bool CardiTryReadCardDmaPatch::FindPatchTarget(PatchContext& patchContext)
             if (!_cardiTryReadCardDma)
                TryPattern(patchContext, sCARDiTryReadCardDmaPatternThumbChouSoujuu);
         }
+        if (!_cardiTryReadCardDma && patchContext.GetSdkVersion() == 0x4027531)
+        {
+            TryPattern(patchContext, sCARDiTryReadCardDmaPatternSdk4027531ThumbInlined);
+        }
 
         if (_cardiTryReadCardDma)
             _thumb = true;
@@ -167,7 +172,7 @@ bool CardiTryReadCardDmaPatch::FindPatchTarget(PatchContext& patchContext)
 static u32 getArmBlAddress(const u32* instructionPointer)
 {
     u32 blInstruction = *instructionPointer;
-    return (u32)instructionPointer + 8 + ((int)((blInstruction & 0xFFFFFF) << 8) >> 6);
+    return (u32)instructionPointer + 8 + ((int)((blInstruction & 0xFFFFFF) << 8) >> 6) + ((blInstruction >> 24) == 0xFA ? 1 : 0);
 }
 
 void CardiTryReadCardDmaPatch::ApplyPatch(PatchContext& patchContext)
@@ -228,7 +233,14 @@ void CardiTryReadCardDmaPatch::ApplyPatch(PatchContext& patchContext)
             {
                 cardiCommon = *(u32*)((u8*)_cardiTryReadCardDma + 0x15C) + 4;
                 cardiOnReadCard = *(u32*)((u8*)_cardiTryReadCardDma + 0x16C);
-                cardiSetCardDma = getArmBlAddress((u32*)((u8*)_cardiTryReadCardDma + 0x148));
+                if (*(u32*)((u8*)_cardiTryReadCardDma + 0x158) == 0xE12FFF1E)
+                {
+                    cardiSetCardDma = getArmBlAddress((u32*)((u8*)_cardiTryReadCardDma + 0x148));
+                }
+                else
+                {
+                    cardiSetCardDma = getArmBlAddress((u32*)((u8*)_cardiTryReadCardDma + 0x14C));
+                }
                 miiCardDmaCopy32 = getArmBlAddress((u32*)(cardiSetCardDma + 0x18));
                 cardiOnReadCardOffset = 0x40;
             }

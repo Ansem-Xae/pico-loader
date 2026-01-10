@@ -11,7 +11,7 @@ patch_cardireadcard_entry:
 patch_cardireadcard_return_offset:
     movs r0, #0x38
     add lr, r0
-    push {r3,r4,r6,lr}
+    push {r1,r2,r3,r4,r6,lr}
     ldr r3, __patch_cardireadcard_fix_cp15_asm_address
     blx r3
 .global patch_cardireadcard_mov_src_to_r0
@@ -59,7 +59,7 @@ patch_cardireadcard_mov_r3_to_dst:
 do_read:
     ldr r3, __patch_cardireadcard_sdread_asm_address
     blx r3
-    pop {r3,r4,r6,pc}
+    pop {r1,r2,r3,r4,r6,pc}
 
 .balign 4
 

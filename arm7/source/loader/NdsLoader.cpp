@@ -220,6 +220,7 @@ void NdsLoader::Load(BootMode bootMode)
     if (bootMode == BootMode::Normal)
     {
         bootType = _romHeader.IsDsiWare() ? BOOT_TYPE_NAND : BOOT_TYPE_CARD;
+        HandleIQueRegionFreePatching();
     }
     else if (bootMode == BootMode::Multiboot)
     {
@@ -295,6 +296,9 @@ void NdsLoader::Load(BootMode bootMode)
     if (Environment::IsDsiMode() && _romHeader.IsTwlRom())
     {
         SetupDsiDeviceList();
+
+        // Set twl wram locking (REG_MBK9) settings from rom header
+        REG_MBK9 = _romHeader.mbk9Setting[0] | (_romHeader.mbk9Setting[1] << 8) | (_romHeader.mbk9Setting[2] << 16);
 
         u32 scfgExt7 = 0x93FBFB00 | (_romHeader.arm7ScfgExt7 & 0x40407);
         REG_SCFG_EXT = scfgExt7;
@@ -1028,6 +1032,15 @@ bool NdsLoader::TryDecryptSecureArea()
 
     LOG_DEBUG("Decrypted secure area\n");
     return true;
+}
+
+void NdsLoader::HandleIQueRegionFreePatching()
+{
+    if ((_romHeader.flags & 0x80) == 0x80)
+    {
+        _romHeader.flags &= ~0x80;
+        _romHeader.headerCrc = swi_getCrc16(0xFFFF, (void*)&_romHeader, 0x15E);
+    }
 }
 
 ConsoleRegion NdsLoader::GetRomRegion(u32 gameCode)
