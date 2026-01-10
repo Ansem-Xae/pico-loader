@@ -20,6 +20,7 @@ static const u32 sCARDiReadCardPatternSdk3027530Thumb[] = { 0xB082B5F8u, 0x90019
 static const u32 sCARDiReadCardPatternSdk4002774[] = { 0xE92D4070u, 0xE59F40D0u, 0xE1A06000u, 0xE3A00C02u };
 static const u32 sCARDiReadCardPatternSdk4017530[] = { 0xE92D4070u, 0xE59F40D8u, 0xE1A06000u, 0xE3A00C02u };
 static const u32 sCARDiReadCardPatternSdk4017530Thumb[] = { 0xB082B5F8u, 0x90019000u, 0x90013020u, 0x69C24827u };
+static const u32 sCARDiReadCardPatternSdk4027531ThumbInlined[] = { 0xB082B5F8u, 0x90019000u, 0x90013020u, 0x69C14841u };
 static const u32 sCARDiReadCardPatternSdk4027539SpiritTracks[] = { 0xE92D4070u, 0xE59F40D4u, 0xE1A06000u, 0xE3A00C02u };
 
 void CardiReadCardPatch::TryPattern(PatchContext& patchContext, const u32* pattern, u32 byteLength)
@@ -90,6 +91,8 @@ bool CardiReadCardPatch::FindPatchTarget(PatchContext& patchContext)
                 TryPattern(patchContext, sCARDiReadCardPatternSdk3027530Thumb, sizeof(sCARDiReadCardPatternSdk3027530Thumb));
             if (!_cardiReadCard)
                 TryPattern(patchContext, sCARDiReadCardPatternSdk2027533ThumbChouSoujuu, sizeof(sCARDiReadCardPatternSdk2027533ThumbChouSoujuu));
+            if (!_cardiReadCard)
+                TryPattern(patchContext, sCARDiReadCardPatternSdk4027531ThumbInlined, sizeof(sCARDiReadCardPatternSdk4027531ThumbInlined));
 
             if (_cardiReadCard)
                 _thumb = true;
@@ -153,42 +156,53 @@ void CardiReadCardPatch::ApplyPatch(PatchContext& patchContext)
     if (_thumb)
     {
         u32 patchOffset;
-        u32 cardiCommonOffset;
         if (_foundPattern == sCARDiReadCardPatternSdk4017530Thumb)
         {
             patchOffset = 0x36;
-            cardiCommonOffset = 0x74;
             patch_cardireadcard_return_offset = THUMB_MOVS_IMM(THUMB_R0, 0x3C);
             patch_cardireadcard_mov_src_to_r0 = THUMB_MOVS_REG(THUMB_R0, THUMB_R1); // src
             patch_cardireadcard_mov_dst_to_r1 = THUMB_MOVS_REG(THUMB_R1, THUMB_R4); // dst
-            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 0);
+            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 8); // r3 from the stack
             patch_cardireadcard_adjust_cardicommon_offset = THUMB_NOP;
-            patch_cardireadcard_mov_r3_to_dst = THUMB_STR_SP_IMM(THUMB_R3, 4);
+            patch_cardireadcard_mov_r3_to_dst = THUMB_STR_SP_IMM(THUMB_R3, 0xC); // copy to r4 on the stack
+            *(u16*)((u8*)_cardiReadCard + patchOffset + 0) = THUMB_LDR_PC_IMM(THUMB_R3, 0x74); // ldr r3,= cardi_common
         }
         else if (_foundPattern == sCARDiReadCardPatternSdk3027530Thumb)
         {
             patchOffset = 0x36;
-            cardiCommonOffset = 0x6C;
             patch_cardireadcard_return_offset = THUMB_MOVS_IMM(THUMB_R0, 0x36);
             patch_cardireadcard_mov_src_to_r0 = THUMB_MOVS_REG(THUMB_R0, THUMB_R1); // src
             patch_cardireadcard_mov_dst_to_r1 = THUMB_MOVS_REG(THUMB_R1, THUMB_R4); // dst
-            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 0);
+            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 8); // r3 from the stack
             patch_cardireadcard_adjust_cardicommon_offset = THUMB_NOP;
-            patch_cardireadcard_mov_r3_to_dst = THUMB_STR_SP_IMM(THUMB_R3, 4);
+            patch_cardireadcard_mov_r3_to_dst = THUMB_STR_SP_IMM(THUMB_R3, 0xC); // copy to r4 on the stack
+            *(u16*)((u8*)_cardiReadCard + patchOffset + 0) = THUMB_LDR_PC_IMM(THUMB_R3, 0x6C); // ldr r3,= cardi_common
         }
         else if (_foundPattern == sCARDiReadCardPatternSdk2004F4CThumb)
         {
             patchOffset = 0x36;
-            cardiCommonOffset = 0;
             patch_cardireadcard_return_offset = THUMB_MOVS_IMM(THUMB_R0, 0x2E);
             patch_cardireadcard_mov_src_to_r0 = THUMB_MOVS_REG(THUMB_R0, THUMB_R1); // src
             patch_cardireadcard_mov_dst_to_r1 = THUMB_MOVS_REG(THUMB_R1, THUMB_R5); // dst
-            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 8); // r6 from stack
+            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 0x10); // r6 from stack
             if (patchContext.GetSdkVersion().GetMajor() <= SDK_VERSION_MAJOR_NITRO_2)
                 patch_cardireadcard_adjust_cardicommon_offset = THUMB_SUBS_IMM(THUMB_R6, THUMB_R6, 4);
             else
                 patch_cardireadcard_adjust_cardicommon_offset = THUMB_NOP;
             patch_cardireadcard_mov_r3_to_dst = THUMB_MOVS_REG(THUMB_R5, THUMB_R3);
+            *(u16*)((u8*)_cardiReadCard + patchOffset + 0) = THUMB_NOP;
+        }
+        else if (_foundPattern == sCARDiReadCardPatternSdk4027531ThumbInlined)
+        {
+            // This variant has a lot of inlining
+            patchOffset = 0x36;
+            patch_cardireadcard_return_offset = THUMB_MOVS_IMM(THUMB_R0, 0x64);
+            patch_cardireadcard_mov_src_to_r0 = THUMB_LDR_SP_IMM(THUMB_R0, 8); // src, r3 from the stack
+            patch_cardireadcard_mov_dst_to_r1 = THUMB_LDR_SP_IMM(THUMB_R1, 4); // dst, r2 from the stack
+            patch_cardireadcard_mov_cardicommon_to_r6 = THUMB_LDR_SP_IMM(THUMB_R6, 0); // r1 from the stack
+            patch_cardireadcard_adjust_cardicommon_offset = THUMB_NOP;
+            patch_cardireadcard_mov_r3_to_dst = THUMB_STR_SP_IMM(THUMB_R3, 4); // copy to r2 on the stack
+            *(u16*)((u8*)_cardiReadCard + patchOffset + 0) = THUMB_LDR_PC_IMM(THUMB_R1, 0xDC); // ldr r1,= cardi_common
         }
         else
         {
@@ -196,7 +210,6 @@ void CardiReadCardPatch::ApplyPatch(PatchContext& patchContext)
             while (1);
         }
 
-        *(u16*)((u8*)_cardiReadCard + patchOffset + 0) = cardiCommonOffset == 0 ? THUMB_NOP : THUMB_LDR_PC_IMM(THUMB_R3, cardiCommonOffset); // ldr r0,= cardi_common
         *(u16*)((u8*)_cardiReadCard + patchOffset + 2) = THUMB_LDR_PC_IMM(THUMB_R0, 0); // ldr r0,= entryAddress
         *(u16*)((u8*)_cardiReadCard + patchOffset + 4) = THUMB_BLX(THUMB_R0);
         *(u32*)((u8*)_cardiReadCard + patchOffset + 6) = entryAddress;

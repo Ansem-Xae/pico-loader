@@ -36,6 +36,7 @@ static const u32 sCARDiTryReadCardDmaPatternSdkThumb[] = { 0xB084B5F8u, 0x483D90
 static const u32 sCARDiTryReadCardDmaPatternSdk4007531Thumb[] = { 0xB084B5F8u, 0x483E9000u, 0x6A446A05u, 0x90032000u };
 static const u32 sCARDiTryReadCardDmaPatternSdk4017530Thumb[] = { 0xB084B5F8u, 0x48479000u, 0x6A446A05u, 0x90032000u };
 static const u32 sCARDiTryReadCardDmaPatternSdk4027530Thumb[] = { 0xB084B5F8u, 0x48479000u, 0x6A446A05u, 0x90032000u };
+static const u32 sCARDiTryReadCardDmaPatternSdk4027531ThumbInlined[] = { 0xB083B5F0u, 0x485D9000u, 0x6A062500u, 0x1C286A44u };
 
 static const u16 sReturnFalsePatchThumb[] = { THUMB_MOVS_IMM(0, 0), THUMB_BX_LR };
 static const u32 sReturnFalsePatchArm[] = { 0xE3A00000, 0xE12FFF1E }; // mov r0, #0; bx lr
@@ -140,6 +141,10 @@ bool CardiTryReadCardDmaPatch::FindPatchTarget(PatchContext& patchContext)
         {
             if (!_cardiTryReadCardDma)
                TryPattern(patchContext, sCARDiTryReadCardDmaPatternThumbChouSoujuu);
+        }
+        if (!_cardiTryReadCardDma && patchContext.GetSdkVersion() == 0x4027531)
+        {
+            TryPattern(patchContext, sCARDiTryReadCardDmaPatternSdk4027531ThumbInlined);
         }
 
         if (_cardiTryReadCardDma)
