@@ -100,8 +100,8 @@ static void bootArm9()
 
     if (((REG_SCFG_EXT >> 14) & 3) == 0)
     {
-        // When switched to DS mode, disable vram extensions
-        REG_SCFG_EXT &= ~(1 << 13);
+        // When switched to DS mode, disable vram extensions and lock scfg9
+        REG_SCFG_EXT &= ~((1 << 13) | (1 << 31));
     }
 
     while (gfx_getVCount() != 191);
