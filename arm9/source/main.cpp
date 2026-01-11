@@ -239,7 +239,7 @@ static void handleSetupHomebrewBootstub(u32 dldiRequiredSpace)
     PatchCodeCollection patchCodeCollection;
     void* patchSpace = (void*)&HOMEBREW_BOOTSTUB[1];
     auto romHeader = (const nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader;
-    if (!romHeader->IsTwlRom())
+    if (!romHeader->SupportsDsiMode())
     {
         patchSpace = (u8*)patchSpace - 0x2F00000 + 0x2300000;
     }
