@@ -19,11 +19,9 @@ static const u8 sJamWithTheBandSaveId[16] = { 0xEC, 0x00, 0x9E, 0xA1, 0x51, 0x65
 
 bool CardSaveArranger::SetupCardSave(const nds_header_ntr_t* header, const TCHAR* savePath) const
 {
-    auto saveType = CardSaveType::None;
     u32 saveSize = DEFAULT_SAVE_SIZE;
     if (header->nandBackupRegionStart != 0)
     {
-        saveType = CardSaveType::Nand;
         u32 blockSize = header->SupportsDsiMode() ? TWL_NAND_BLOCK_SIZE : NTR_NAND_BLOCK_SIZE;
         u32 nandBackupRegionStart = header->nandBackupRegionStart * blockSize;
         saveSize = NAND_RW_REGION_END - nandBackupRegionStart;
@@ -43,7 +41,6 @@ bool CardSaveArranger::SetupCardSave(const nds_header_ntr_t* header, const TCHAR
             }
             else
             {
-                saveType = saveListEntry->GetSaveType();
                 saveSize = saveListEntry->GetSaveSize();
                 saveListEntry->Dump();
             }
