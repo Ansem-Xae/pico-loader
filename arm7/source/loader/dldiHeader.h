@@ -1,5 +1,4 @@
 #pragma once
-#include "common.h"
 
 #define DLDI_MAGIC              0xBF8DA5ED
 #define DLDI_DRIVER_MAGIC_NONE  0x49444C44

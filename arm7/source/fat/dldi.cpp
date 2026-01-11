@@ -95,3 +95,8 @@ bool dldi_patchTo(dldi_header_t* stub)
 {
     return sDldiDriver.PatchTo(stub);
 }
+
+void dldi_copyTo(void* target)
+{
+    memcpy(target, sDldiBuffer, sizeof(sDldiBuffer));
+}

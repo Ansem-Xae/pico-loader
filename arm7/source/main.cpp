@@ -222,6 +222,7 @@ extern "C" void loaderMain()
         sLoader.SetRomPath(gLoaderHeader.loadParams.romPath);
         handleSavePath();
         sLoader.SetArguments(gLoaderHeader.loadParams.arguments, gLoaderHeader.loadParams.argumentsLength);
+        sLoader.SetLauncherPath(gLoaderHeader.v2.launcherPath);
         sLoader.Load(BootMode::Normal);
     }
 
