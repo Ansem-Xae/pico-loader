@@ -188,17 +188,21 @@ void NdsLoader::Load(BootMode bootMode)
         {
             if (_romHeader.IsDsiWare())
             {
-                if (bootMode == BootMode::SdkResetSystem)
+                // There exist DS mode DSiWare applications, which don't have a save file.
+                if (_romHeader.SupportsDsiMode())
                 {
-                    // todo: for DSiWare we should store the rom path
-                    LOG_FATAL("Soft reset from DSiWare not yet supported\n");
-                    return;
-                }
+                    if (bootMode == BootMode::SdkResetSystem)
+                    {
+                        // todo: for DSiWare we should store the rom path
+                        LOG_FATAL("Soft reset from DSiWare not yet supported\n");
+                        return;
+                    }
 
-                if (!TrySetupDsiWareSave())
-                {
-                    ErrorDisplay().PrintError("Failed to setup DSiWare save.");
-                    return;
+                    if (!TrySetupDsiWareSave())
+                    {
+                        ErrorDisplay().PrintError("Failed to setup DSiWare save.");
+                        return;
+                    }
                 }
             }
             else
@@ -231,7 +235,7 @@ void NdsLoader::Load(BootMode bootMode)
 
     if (Environment::IsDsiMode())
     {
-        if (_romHeader.IsTwlRom())
+        if (_romHeader.SupportsDsiMode())
         {
             SetupTwlConfig();
             TwlAes().SetupAes(&_romHeader);
@@ -248,7 +252,7 @@ void NdsLoader::Load(BootMode bootMode)
             return;
         }
 
-        if (Environment::IsDsiMode() && _romHeader.IsTwlRom())
+        if (Environment::IsDsiMode() && _romHeader.SupportsDsiMode())
         {
             if (!TryLoadArm9i())
             {
@@ -271,7 +275,7 @@ void NdsLoader::Load(BootMode bootMode)
             return;
         }
 
-        if (Environment::IsDsiMode() && _romHeader.IsTwlRom())
+        if (Environment::IsDsiMode() && _romHeader.SupportsDsiMode())
         {
             if (!TryLoadArm7i())
             {
@@ -293,7 +297,7 @@ void NdsLoader::Load(BootMode bootMode)
         LOG_DEBUG("Arm7 patches done\n");
     }
 
-    if (Environment::IsDsiMode() && _romHeader.IsTwlRom())
+    if (Environment::IsDsiMode() && _romHeader.SupportsDsiMode())
     {
         SetupDsiDeviceList();
 
@@ -329,7 +333,7 @@ void NdsLoader::Load(BootMode bootMode)
 
     if (Environment::IsDsiMode())
     {
-        if (_romHeader.IsTwlRom())
+        if (_romHeader.SupportsDsiMode())
         {
             if (!(_romHeader.twlFlags2 & 1))
             {
@@ -380,7 +384,7 @@ void NdsLoader::InsertArgv()
 
     // Find the address to write argv
     u32 argDst = ((_romHeader.arm9LoadAddress + _romHeader.arm9Size + 3) & ~3) + 4;
-    if (_romHeader.IsTwlRom())
+    if (_romHeader.SupportsDsiMode())
     {
         u32 argDstTwl = ((_romHeader.arm9iLoadAddress + _romHeader.arm9iSize + 3) & ~3) + 4;
         if (argDstTwl > argDst)
@@ -442,7 +446,7 @@ void NdsLoader::ApplyArm7Patches()
         u32 mbk6 = 0;
         u32 mbk7 = 0;
         u32 mbk8 = 0;
-        if (Environment::IsDsiMode() && _romHeader.IsTwlRom())
+        if (Environment::IsDsiMode() && _romHeader.SupportsDsiMode())
         {
             mbk6 = REG_MBK6;
             mbk7 = REG_MBK7;
@@ -466,7 +470,7 @@ void NdsLoader::ApplyArm7Patches()
             memcpy(patchCode.get(), srcAddress, patchSpaceSize);
         }
 
-        if (Environment::IsDsiMode() && _romHeader.IsTwlRom())
+        if (Environment::IsDsiMode() && _romHeader.SupportsDsiMode())
         {
             REG_MBK6 = mbk6;
             REG_MBK7 = mbk7;
@@ -493,7 +497,7 @@ void NdsLoader::SetupSharedMemory(u32 cardId, u32 agbMem, u32 resetParam, u32 ro
 
     LoadFirmwareUserSettings();
 
-    if (!_romHeader.IsTwlRom())
+    if (!_romHeader.SupportsDsiMode())
     {
         memcpy((void*)0x027FF800, (void*)0x02FFF800, sizeof(shared_memory_ntr_t));
         memcpy((void*)0x023FF800, (void*)0x02FFF800, sizeof(shared_memory_ntr_t));
@@ -505,10 +509,10 @@ void NdsLoader::SetupSharedMemory(u32 cardId, u32 agbMem, u32 resetParam, u32 ro
     {
         strcpy(TWL_SHARED_MEMORY->sysMenuVersionInfoContentId, "00000009");
         TWL_SHARED_MEMORY->sysMenuVersionInfoContentLastInitialCode = 'P'; // europe
-
-        memcpy(TWL_SHARED_MEMORY->twlCardRomHeader, &_romHeader, sizeof(nds_header_twl_t));
-        memcpy(TWL_SHARED_MEMORY->twlRomHeader, &_romHeader, sizeof(nds_header_twl_t));
     }
+
+    memcpy(TWL_SHARED_MEMORY->twlCardRomHeader, &_romHeader, sizeof(nds_header_twl_t));
+    memcpy(TWL_SHARED_MEMORY->twlRomHeader, &_romHeader, sizeof(nds_header_twl_t));
 }
 
 void NdsLoader::LoadFirmwareUserSettings()
@@ -643,7 +647,7 @@ void NdsLoader::HandleAntiPiracy()
 void NdsLoader::RemapWram()
 {
     mem_unlockAllTwlWram();
-    if (_romHeader.IsTwlRom())
+    if (_romHeader.SupportsDsiMode())
     {
         REG_MBK6 = _romHeader.arm7MbkSettings[0];
         REG_MBK7 = _romHeader.arm7MbkSettings[1];

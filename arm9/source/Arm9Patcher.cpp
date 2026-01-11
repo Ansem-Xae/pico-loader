@@ -51,7 +51,7 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
     auto romHeader = (const nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader;
     auto twlRomHeader = (const nds_header_twl_t*)TWL_SHARED_MEMORY->twlRomHeader;
     u32 arm9Size = romHeader->arm9Size;
-    u32 arm9iSize = romHeader->IsTwlRom() ? twlRomHeader->arm9iSize : 0;
+    u32 arm9iSize = romHeader->SupportsDsiMode() ? twlRomHeader->arm9iSize : 0;
     u32 compressedEnd = 0;
     auto moduleParams = ModuleParamsLocator().FindModuleParams(romHeader);
     SdkVersion sdkVersion = moduleParams ? moduleParams->sdkVersion : 0u;
@@ -76,7 +76,7 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
             }
         }
 
-        if (gIsDsiMode && romHeader->IsTwlRom())
+        if (gIsDsiMode && romHeader->SupportsDsiMode())
         {
             auto arm9iModuleParams = (module_params_twl_t*)(romHeader->arm9LoadAddress + twlRomHeader->arm9iModuleParamsAddress);
             if (arm9iModuleParams->magicBigEndian == MODULE_PARAMS_TWL_MAGIC_BE &&
@@ -112,7 +112,7 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
     {
         (void*)romHeader->arm9LoadAddress,
         arm9Size,
-        romHeader->IsTwlRom() ? (void*)twlRomHeader->arm9iLoadAddress : nullptr,
+        romHeader->SupportsDsiMode() ? (void*)twlRomHeader->arm9iLoadAddress : nullptr,
         arm9iSize,
         sdkVersion,
         romHeader->gameCode,
@@ -156,13 +156,10 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
         {
             if (!twlRomHeader->IsDsiWare())
             {
-                // if ((romHeader->unitCode & 3) != 3)
-                {
-                    patchCollection.AddPatch(new CardiIsRomDmaAvailablePatch());
-                }
+                patchCollection.AddPatch(new CardiIsRomDmaAvailablePatch());
                 patchCollection.AddPatch(new CardiReadRomWithCpuPatch());
 
-                if (gIsDsiMode && romHeader->IsTwlRom())
+                if (gIsDsiMode && romHeader->SupportsDsiMode())
                 {
                     patchCollection.AddPatch(new CardiReadCardWithHashInternalAsyncPatch());
                 }

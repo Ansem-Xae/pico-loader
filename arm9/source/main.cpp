@@ -220,7 +220,7 @@ static void handleBootCommand()
     Arm9IoRegisterClearer().ClearNtrIoRegisters(isSdkResetSystem);
     REG_EXMEMCNT |= 0x0880; // map ds and gba slot to arm7
     auto ntrRomHeader = (const nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader;
-    if (gIsDsiMode && ntrRomHeader->IsTwlRom())
+    if (gIsDsiMode && ntrRomHeader->SupportsDsiMode())
     {
         Arm9IoRegisterClearer().ClearTwlIoRegisters();
         REG_SCFG_EXT = 0x8307F100;

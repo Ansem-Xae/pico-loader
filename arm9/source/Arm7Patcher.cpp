@@ -35,8 +35,8 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform) const
     {
         (void*)romHeader->arm7LoadAddress,
         romHeader->arm7Size,
-        (romHeader->IsTwlRom()) ? (void*)twlRomHeader->arm7iLoadAddress : nullptr,
-        (romHeader->IsTwlRom()) ? twlRomHeader->arm7iSize : 0,
+        (romHeader->SupportsDsiMode()) ? (void*)twlRomHeader->arm7iLoadAddress : nullptr,
+        (romHeader->SupportsDsiMode()) ? twlRomHeader->arm7iSize : 0,
         sdkVersion,
         romHeader->gameCode,
         romHeader->softwareVersion,
@@ -114,7 +114,7 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform) const
         u32 mbk6 = 0;
         u32 mbk7 = 0;
         u32 mbk8 = 0;
-        if (gIsDsiMode && romHeader->IsTwlRom())
+        if (gIsDsiMode && romHeader->SupportsDsiMode())
         {
             mbk6 = REG_MBK6;
             mbk7 = REG_MBK7;
@@ -133,7 +133,7 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform) const
         ic_invalidateAll();
 
         // If in DSi mode and the rom is a DSi rom, restore twl wram.
-        if (gIsDsiMode && romHeader->IsTwlRom())
+        if (gIsDsiMode && romHeader->SupportsDsiMode())
         {
             REG_MBK6 = mbk6;
             REG_MBK7 = mbk7;

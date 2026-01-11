@@ -1,6 +1,9 @@
 #pragma once
 #include <nds/ndstypes.h>
 
+#define NDS_HEADER_UNIT_CODE_NOT_SUPPORTS_DS_MODE   (1 << 0)
+#define NDS_HEADER_UNIT_CODE_SUPPORTS_DSI_MODE      (1 << 1)
+
 struct nds_header_ntr_t
 {
     u8 gameTitle[12];
@@ -55,9 +58,9 @@ struct nds_header_ntr_t
     u32 debugRomLoadAddress; // and arm9 entry
     u32 debugRomArm7EntryAddress;
 
-    constexpr bool IsTwlRom() const
+    constexpr bool SupportsDsiMode() const
     {
-        return unitCode & 2;
+        return unitCode & NDS_HEADER_UNIT_CODE_SUPPORTS_DSI_MODE;
     }
 };
 
@@ -134,29 +137,32 @@ struct nds_header_twl_t : public nds_header_ntr_t
     u8 gapF00[0x80];
     u8 headerRsaSha1Signature[0x80];
 
+    /// @brief Returns if this is a DSiWare application. Note that this does not imply that the app runs in DSi mode.
+    /// @return \c true when this is a DSiWare application, or \c false otherwise.
     constexpr bool IsDsiWare() const
     {
-        return IsTwlRom() && ((titleId >> 32) & 4) != 0;
+        // Do not use SupportsDsiMode() here, because there exist DS mode DSiWare applications.
+        return (twlFlags & 1) != 0 && ((titleId >> 32) & 4) != 0;
     }
 
     constexpr bool HasSdAccess() const
     {
-        return IsTwlRom() && (accessControl & NDS_HEADER_TWL_ACCESS_CONTROL_SD_ACCESS) != 0;
+        return SupportsDsiMode() && (accessControl & NDS_HEADER_TWL_ACCESS_CONTROL_SD_ACCESS) != 0;
     }
 
     constexpr bool HasNandAccess() const
     {
-        return IsTwlRom() && (accessControl & NDS_HEADER_TWL_ACCESS_CONTROL_NAND_ACCESS) != 0;
+        return SupportsDsiMode() && (accessControl & NDS_HEADER_TWL_ACCESS_CONTROL_NAND_ACCESS) != 0;
     }
 
     constexpr bool HasShared2Access() const
     {
-        return IsTwlRom() && (accessControl & NDS_HEADER_TWL_ACCESS_CONTROL_SHARED2_ACCESS) != 0;
+        return SupportsDsiMode() && (accessControl & NDS_HEADER_TWL_ACCESS_CONTROL_SHARED2_ACCESS) != 0;
     }
 
     constexpr bool HasSslCertAccess() const
     {
-        return IsTwlRom() && (accessControl & NDS_HEADER_TWL_ACCESS_CONTROL_SSLCERT_ACCESS) != 0;
+        return SupportsDsiMode() && (accessControl & NDS_HEADER_TWL_ACCESS_CONTROL_SSLCERT_ACCESS) != 0;
     }
 };
 

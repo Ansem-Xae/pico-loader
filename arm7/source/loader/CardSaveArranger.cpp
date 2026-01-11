@@ -24,7 +24,7 @@ bool CardSaveArranger::SetupCardSave(const nds_header_ntr_t* header, const TCHAR
     if (header->nandBackupRegionStart != 0)
     {
         saveType = CardSaveType::Nand;
-        u32 blockSize = header->IsTwlRom() ? TWL_NAND_BLOCK_SIZE : NTR_NAND_BLOCK_SIZE;
+        u32 blockSize = header->SupportsDsiMode() ? TWL_NAND_BLOCK_SIZE : NTR_NAND_BLOCK_SIZE;
         u32 nandBackupRegionStart = header->nandBackupRegionStart * blockSize;
         saveSize = NAND_RW_REGION_END - nandBackupRegionStart;
         LOG_DEBUG("NAND save. Size: 0x%X.", saveSize);
