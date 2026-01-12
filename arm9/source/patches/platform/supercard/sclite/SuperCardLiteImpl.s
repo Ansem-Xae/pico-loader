@@ -40,12 +40,19 @@
 
 .section "sclite_sd_command_drop", "ax"
 @ void sclite_sdCommandAndDropResponse6(uint32_t dummy, uint32_t argument, SD_COMMANDS command)
-@ command is passed in r2
+@ command is passed in r2, in r6 is the pointer to sccmn_sdSendClock10
 BEGIN_THUMB_FUNCTION sclite_sdCommandAndDropResponse6
+	push {lr}
+	cmp r2, #0x52
+	@ if command is READ_MULTIPLE_BLOCK, don't send extra clock cycles
+	beq 1f
+	@ we need to call sccmn_sdSendClock10 after the command is sent, push sccmn_sdSendClock10 and the lr to the stack
+	push {r6}
+1:
     @ among the pushed registers there are the command and
     @ argument one, which are then used at the loop to
     @ send the sd command
-    push {r1-r7,lr}
+    push {r1-r7}
 
     @ loads reg_scsd_cmd
     movs r7, #0x98
@@ -100,8 +107,11 @@ SDCommand_drop_resp:
     subs r6, r6, #1
     bne SDCommand_drop_resp
 
-    @ restore stack space
+	@ we pop from the stack r6 as pc, which corresponds to sccmn_sdSendClock10 or lr, if it is sccmn_sdSendClock10 that function
+	@ is called, and that function doesn't push a new lr but pops a preexisting one from the stack, which in our case is the
+	@ lr provided to this function
     pop {r1-r7,pc}
+
 .balign 4
 .pool
 
@@ -110,7 +120,7 @@ SDCommand_drop_resp:
 BEGIN_THUMB_FUNCTION sclite_writeSector
     push {r1,r2,r4-r7,lr}
 
-    @ load EXMEMCNT register
+    @ load EXMEMCNT register into r7
     LOAD_EXMEMCNT
 
     @ r1 for now holds the sector
@@ -120,80 +130,96 @@ sclite_writeSectorSdhcLabel:
     lsls r1, r0, #9
     @ movs r1, r0
 
+	@ r4 sccmn_changeMode
+	@ r5 sclite_sdCommandAndDropResponse6
+	@ r6 sccmn_sdSendClock10
+
+	adr r3, sccmn_changeMode_writeInterworkLite_address
+	ldmia r3!, {r4-r6}
+
     @ enable sd access
-    @ this function won't touch r1
+    @ this function won't touch anything
     movs r0, #3
-    CALL sccmn_changeMode writeInterwork
+    @ call sccmn_changeMode
+	bl interwork_r4
 
     @ WRITE_MULTIPLE_BLOCK
+	@ puts the value in r2
     SD_COMMAND_ARGUMENT #25
     @ 2nd parameter is in r1 from above
 
-    CALL sclite_sdCommandAndDropResponse6 writeInterwork
+    @ call sclite_sdCommandAndDropResponse6
+	bl interwork_r5
 
-    @ this function will trash r4 but leave r0 and r1 untouched
-    CALL sccmn_sdSendClock10 writeInterwork
+	@ load the rest of the functions
+	@ r4 sccmn_sdio4BitCrc16
+	@ r5 sclite_writeData
+	ldmia r3!, {r4-r5}
 
-    @ loads the saved r0 and r2 (readnum)
+    @ loads the saved r1 (buff) and r2 (writenum)
     @ into r0 and r1
     pop {r0,r1}
+
 write_sector_loop:
-    @ all the functions called in this loop don't change the value of r0 and r1
+    @ all the functions called in this loop don't change the value of any register
     @ except sclite_writeData, which will increase r0 by 512
     @ sccmn_sdio4BitCrc16 will write the checksum to r2-r3
-    CALL sccmn_sdio4BitCrc16 writeInterwork
-
-    @ first argument is buffer
-    @ regs r2 and r3 hold the crc
-    CALL sclite_writeData writeInterwork
-
-    @ this function will trash r4 but leave r0 and r1 untouched
-    CALL sccmn_sdSendClock10 writeInterwork
+    @ call sccmn_sdio4BitCrc16, this function will then tail call to r5 (sclite_writeData)
+	bl interwork_r4
 
     subs r1, #1
     bne write_sector_loop
 
+	adr r3, sccmn_changeMode_writeInterworkLite_address
+	@ r4 sccmn_changeMode
+	@ r5 sclite_sdCommandAndDropResponse6
+	ldmia r3!, {r4-r5}
+
     @ STOP_TRANSMISSION
+	@ puts the value in r2
     SD_COMMAND_ARGUMENT #12
     @ 2nd parameter is passed in r1
     @ and from the loop above r1 is already 0
 
-    CALL sclite_sdCommandAndDropResponse6 writeInterwork
-
-    @ this function will trash r4 but leave r0 and r1 untouched
-    CALL sccmn_sdSendClock10 writeInterwork
+	@ call sclite_sdCommandAndDropResponse6
+	bl interwork_r5
 
     @ loads sd_dataadd
     movs r0, #0x90
     lsls r0, r0, #20
 
-    @ while(*r1 &0x100) == 0
+    @ while(*r0 &0x100) == 0
 beginwhile_WriteSector:
     ldrh r1, [r0]
     lsrs r1, #9
     bcc beginwhile_WriteSector
 
     movs r0, #1
-    CALL sccmn_changeMode writeInterwork
+    @ call sccmn_changeMode writeInterwork
+	bl interwork_r4
 
     @ restore EXMEMCNT register
     RESTORE_EXMEMCNT
 
     pop {r4-r7,pc}
-INTERWORK writeInterwork
-INTERWORK_FUNCTION sclite_writeData writeInterwork
-INTERWORK_FUNCTION sccmn_sdio4BitCrc16 writeInterwork
-INTERWORK_FUNCTION sccmn_sdSendClock10 writeInterwork
-INTERWORK_FUNCTION sccmn_changeMode writeInterwork
-INTERWORK_FUNCTION sclite_sdCommandAndDropResponse6 writeInterwork
-
+interwork_r4:
+	bx r4
+interwork_r5:
+	bx r5
 .balign 4
 .pool
+INTERWORK_FUNCTION sccmn_changeMode writeInterwork
+INTERWORK_FUNCTION sclite_sdCommandAndDropResponse6 writeInterwork
+INTERWORK_FUNCTION sccmn_sdSendClock10 writeInterwork
+INTERWORK_FUNCTION sccmn_sdio4BitCrc16 writeInterwork
+INTERWORK_FUNCTION sclite_writeData writeInterwork
 
 .section "sclite_read_sector", "ax"
 @ bool sclite_readSector(uint32_t sector, uint8_t *buff, uint32_t readnum)
 BEGIN_THUMB_FUNCTION sclite_readSector
     push {r1,r2-r7,lr}
+
+    @ load EXMEMCNT register into r7
     LOAD_EXMEMCNT
 
     @ r1 for now holds the sector
@@ -204,21 +230,22 @@ sclite_readSectorSdhcLabel:
     @ movs r1, r0
 
     @ enable sd access
-    @ this function won't touch r1
+    @ this function won't touch anything
     movs r0, #3
     CALL sccmn_changeMode readInterwork
 
     @ READ_MULTIPLE_BLOCK
+	@ puts the value in r2
     SD_COMMAND_ARGUMENT #18
     @ 2nd parameter is in r1 from above
 
     CALL sclite_sdCommandAndDropResponse6 readInterwork
 
-    @ loads the saved r0 and r2 (writenum)
+    @ loads the saved r1 (buff) and r2 (readnum)
     @ into r0 and r1
     pop {r0,r1}
 read_sector_loop:
-    @ all the functions called in this loop don't change the value of r0 or r1
+    @ all the functions called in this loop don't change the value of any register
     @ except sclite_readData, which will increase r0 by 512 automatically
     CALL sclite_readData readInterwork
 
@@ -226,14 +253,15 @@ read_sector_loop:
     bne read_sector_loop
 
     @ STOP_TRANSMISSION
+	@ puts the value in r2
     SD_COMMAND_ARGUMENT #12
     @ 2nd parameter is passed in r1
     @ and from the loop above r1 is already 0
-
+	LOAD_INTERWORK_FUNCTION sccmn_sdSendClock10 readInterwork r6
     CALL sclite_sdCommandAndDropResponse6 readInterwork
 
-    @ this function will trash r4 but leave r0 and r1 untouched
-    CALL sccmn_sdSendClock10 readInterwork
+    @ this function won't touch anything
+    @ CALL sccmn_sdSendClock10 readInterwork
 
 
     movs r0, #1
@@ -312,14 +340,16 @@ sclite_readData_loop:
 
 .section "sclite_write_data", "ax"
 @ void sclite_writeData(void*& buffer, int value_to_keep, int crc_buff1, int crc_buff2)
-@ this function updates r0, leaves r1 untouched and thrashes r4
+@ this function updates r0 and leaves everything else untouched
+@ in r6 is the pointer to sccmn_sdSendClock10
 BEGIN_THUMB_FUNCTION sclite_writeData
+	@ push sccmn_sdSendClock10 and the current lr reg to the stack, so that at the end we can
+	@ call in sequence sccmn_sdSendClock10 and then return
+	push {r6}
+    push {r1-r7}
     @ loads sd_dataadd
     movs r4, #0x90
     lsls r4, r4, #20
-
-    @ save sd_dataadd constant above for later
-    push {r1-r7,lr}
 
 waitOnWriteFalse_WriteData:
     ldrh r1, [r4]
@@ -356,9 +386,12 @@ sclite_writeData_loop:
 
     @ r1 holds a value that has not to be changed
     @ r2-r3 hold the crc value to be written
-    @ r4 holds the value sd_dataadd saved at the start
-    pop {r1-r4}
+    pop {r1-r3}
+
     stmia r7!, {r2-r3}
+    @ loads sd_dataadd
+    movs r4, #0x90
+    lsls r4, r4, #20
 
     @ write end bit
     movs r3, #0xff
@@ -374,7 +407,11 @@ waitOnWriteTrue_WriteData:
     str r3, [r4]
     str r3, [r4]
 
-    pop {r5-r7,pc}
+
+	@ we pop from the stack r6 as pc, which corresponds to sccmn_sdSendClock10 so we jump to it
+	@ sccmn_sdSendClock10 doesn't push a new lr but pops a preexisting one from the stack, which in our case is the
+	@ lr provided to this function
+    pop {r4-r7,pc}
 
 .balign 4
 .pool
