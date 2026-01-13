@@ -7,8 +7,8 @@
 .type patch_osresetsystem_entry, %function
 patch_osresetsystem_entry:
     adr r0, regIpcSync
-    // regIpcSync, arm7ResetCommand, regVramCntA, vramAbcdLcdcSetting, readSdSectors_address, loader_info_address, vramCLcdcAddress, patch_osresetsystem_bootPicoLoader_address
-    ldmia r0, {r0, r1, r2, r3, r4, r5, r6, r7}
+    // regIpcSync, arm7ResetCommand, vramAbcdLcdcSetting, readSdSectors_address, loader_info_address, vramCLcdcAddress, patch_osresetsystem_bootPicoLoader_address
+    ldmia r0, {r0, r1, r3, r4, r5, r6, r7}
 
     // r9 = readSdSectors_address
     mov r9, r4
@@ -23,22 +23,24 @@ patch_osresetsystem_entry:
     str r1, [r0, #8]
 
     adds r7, #(twl_arm7_sync - patch_osresetsystem_bootPicoLoader)
-    mov lr, pc
 .global patch_osresetsystem_entry_jump_to_twl_arm7_sync
 patch_osresetsystem_entry_jump_to_twl_arm7_sync:
-    bx r7
+    blx r7
 
 2:
     ldrb r7, [r0] // ipc sync
     cmp r7, #1
     bne 2b // while ipc sync from arm7 is not 1
 
+    adds r0, #(0x04000240 - 0x04000180)
+
     // map vram ABCD to LCDC
-    str r3, [r2]
+    str r3, [r0]
 
     // load pico loader arm9
     ldmia r5!, {r4,r6,r7} // clusterShift, database, clusterMap[0]
-    ldr r7,= 0x06800000
+    movs r7, #0x68
+    lsls r7, r7, #20 // 0x06800000
     mov r11, pc
     b loadData
 
@@ -76,9 +78,6 @@ regIpcSync:
 
 arm7ResetCommand:
     .word 0x4000C
-
-regVramCntA:
-    .word 0x04000240
 
 vramAbcdLcdcSetting:
     .word 0x80808080
