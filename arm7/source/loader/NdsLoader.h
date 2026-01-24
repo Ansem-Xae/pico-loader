@@ -79,6 +79,7 @@ private:
         char driveLetter, const char* deviceName, const char* path, u8 flags, u8 accessRights);
     void SetupDsiDeviceList();
     void InsertArgv();
+    void HandleGameSpecificPatches();
     void HandleHomebrewPatching();
     bool TrySetupDsiWareSave();
     bool TryDecryptSecureArea();

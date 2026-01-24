@@ -1,6 +1,7 @@
 ﻿using CsvHelper.Configuration;
 using CsvHelper;
 using System.Globalization;
+using PicoLoaderConverter.Common;
 
 namespace PicoLoaderConverter.ApList;
 
@@ -112,7 +113,7 @@ sealed class ApListFactory
     private ApListEntry ConvertFromCvsApListEntry(CsvApListEntry csvApListEntry)
     {
         return new ApListEntry(
-            GameCodeToUint(csvApListEntry.GameCode),
+            GameCodeHelper.GameCodeToUint(csvApListEntry.GameCode),
             (byte)csvApListEntry.GameVersion,
             ParseDSProtectVersion(csvApListEntry.DSProtectVersion),
             (byte)csvApListEntry.DSProtectFunctionMask,
@@ -136,16 +137,6 @@ sealed class ApListFactory
             RegularOffset = (int)apListEntry.RegularOffset,
             SOffset = (int)apListEntry.SOffset
         };
-    }
-
-    private uint GameCodeToUint(string gameCode)
-    {
-        if (gameCode.Length != 4)
-        {
-            throw new ArgumentException(
-                $"Game code '{gameCode}' is not valid. It must consist of exactly 4 characters.", nameof(gameCode));
-        }
-        return (uint)gameCode[0] | ((uint)gameCode[1] << 8) | ((uint)gameCode[2] << 16) | ((uint)gameCode[3] << 24);
     }
 
     private DSProtectVersion ParseDSProtectVersion(string dsProtectVersion)

@@ -2,6 +2,7 @@
 using CsvHelper;
 using System.Globalization;
 using System.Numerics;
+using PicoLoaderConverter.Common;
 
 namespace PicoLoaderConverter.SaveList;
 
@@ -97,7 +98,7 @@ sealed class SaveListFactory
         }
         
         return new SaveListEntry(
-            GameCodeToUint(csvSaveListEntry.GameCode),
+            GameCodeHelper.GameCodeToUint(csvSaveListEntry.GameCode),
             ParseSaveType(csvSaveListEntry.SaveType),
             (byte)(csvSaveListEntry.SaveSize == 0 ? 0 : BitOperations.Log2((uint)csvSaveListEntry.SaveSize)));
     }
@@ -111,16 +112,6 @@ sealed class SaveListFactory
             SaveType = FormatSaveType(saveListEntry.SaveType),
             SaveSize = saveListEntry.SaveSize == 0 ? 0 : (1 << saveListEntry.SaveSize)
         };
-    }
-
-    private uint GameCodeToUint(string gameCode)
-    {
-        if (gameCode.Length != 4)
-        {
-            throw new ArgumentException(
-                $"Game code '{gameCode}' is not valid. It must consist of exactly 4 characters.", nameof(gameCode));
-        }
-        return gameCode[0] | (uint)gameCode[1] << 8 | (uint)gameCode[2] << 16 | (uint)gameCode[3] << 24;
     }
 
     private CardSaveType ParseSaveType(string saveType)

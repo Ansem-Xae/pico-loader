@@ -1,7 +1,7 @@
 #include "common.h"
 #include "SaveListFactory.h"
 
-SaveList* SaveListFactory::CreateFromFile(const TCHAR *path)
+std::unique_ptr<SaveList> SaveListFactory::CreateFromFile(const TCHAR* path)
 {
     FIL file;
     if (f_open(&file, path, FA_OPEN_EXISTING | FA_READ) != FR_OK)
@@ -20,5 +20,5 @@ SaveList* SaveListFactory::CreateFromFile(const TCHAR *path)
     }
     f_close(&file);
 
-    return new SaveList(std::move(entries), entryCount);
+    return std::make_unique<SaveList>(std::move(entries), entryCount);
 }

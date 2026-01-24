@@ -29,7 +29,7 @@ bool CardSaveArranger::SetupCardSave(const nds_header_ntr_t* header, const TCHAR
     }
     else
     {
-        SaveList* saveList = SaveListFactory().CreateFromFile(SAVE_LIST_PATH);
+        auto saveList = SaveListFactory().CreateFromFile(SAVE_LIST_PATH);
         if (saveList)
         {
             const auto saveListEntry = saveList->FindEntry(header->gameCode);
@@ -44,7 +44,6 @@ bool CardSaveArranger::SetupCardSave(const nds_header_ntr_t* header, const TCHAR
                 saveSize = saveListEntry->GetSaveSize();
                 saveListEntry->Dump();
             }
-            delete saveList;
         }
     }
     if (saveSize == 0)
