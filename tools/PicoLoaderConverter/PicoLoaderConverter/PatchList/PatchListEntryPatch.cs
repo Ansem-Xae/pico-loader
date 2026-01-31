@@ -6,7 +6,6 @@ namespace PicoLoaderConverter.PatchList;
 sealed class PatchListEntryPatch
 {
     public PatchType Type { get; init; }
-    public string Description { get; init; } = string.Empty;
 
     // replace
     [JsonConverter(typeof(JsonHexNumberConverter))]
