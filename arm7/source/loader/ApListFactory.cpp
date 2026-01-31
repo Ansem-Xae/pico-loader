@@ -1,7 +1,7 @@
 #include "common.h"
 #include "ApListFactory.h"
 
-ApList* ApListFactory::CreateFromFile(const TCHAR *path)
+std::unique_ptr<ApList> ApListFactory::CreateFromFile(const TCHAR* path)
 {
     FIL file;
     if (f_open(&file, path, FA_OPEN_EXISTING | FA_READ) != FR_OK)
@@ -20,5 +20,5 @@ ApList* ApListFactory::CreateFromFile(const TCHAR *path)
     }
     f_close(&file);
 
-    return new ApList(std::move(entries), entryCount);
+    return std::make_unique<ApList>(std::move(entries), entryCount);
 }

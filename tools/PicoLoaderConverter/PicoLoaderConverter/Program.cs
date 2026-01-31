@@ -12,7 +12,8 @@ static class Program
     /// </summary>
     private static readonly Type[] sVerbs = [
         typeof(ApListConverterVerb),
-        typeof(SaveListConverterVerb)
+        typeof(SaveListConverterVerb),
+        typeof(PatchListConverterVerb)
     ];
 
     static void Main(string[] args)

@@ -1,0 +1,1141 @@
+[
+    // YPTE - Puppy Palace (USA)
+    // YPTP - My Puppy Shop (Europe)
+    // YPTJ - Machi no Pet-ya-san DS - 200 Piki Wan-chan Daishuugou (Japan)
+    //
+    // These games perform a save file read test which introduces a race condition leading to stack corruption.
+    // The save file read is patched from 2 bytes to 0 bytes to prevent this. The data is not checked, only the card result code.
+    {
+        "gameCode": "YPTE", // Puppy Palace (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "02029DD8",
+                "data": "00"
+            }
+        ]
+    },
+    {
+        "gameCode": "YPTP", // My Puppy Shop (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "02029C98",
+                "data": "00"
+            }
+        ]
+    },
+    {
+        "gameCode": "YPTJ", // Machi no Pet-ya-san DS - 200 Piki Wan-chan Daishuugou (Japan)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "0203ADAC",
+                "data": "00"
+            }
+        ]
+    },
+
+    // ACBE - Castlevania - Portrait of Ruin (USA)
+    // ACBP - Castlevania - Portrait of Ruin (Europe)
+    // ACBJ - Akumajou Dracula - Gallery of Labyrinth (Japan)
+    // ACBJ - Akumajou Dracula - Gallery of Labyrinth (Japan) (Rev 1)
+    //
+    // These games have a multithreading race condition which can cause crashes when loading certain sound effects.
+    // The patches replace two calls to OS_IsThreadTerminated with calls to OS_JoinThread instead.
+    {
+        "gameCode": "ACBE", // Castlevania - Portrait of Ruin (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "02007910",
+                "data": "8E 50 02 EB 00 00 5F E3"
+            },
+            {
+                "type": "replace",
+                "address": "02007A00",
+                "data": "52 50 02 EB 00 00 50 E1"
+            }
+        ]
+    },
+    {
+        "gameCode": "ACBP", // Castlevania - Portrait of Ruin (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "02007B00",
+                "data": "70 53 02 EB 00 00 5F E3"
+            },
+            {
+                "type": "replace",
+                "address": "02007BF0",
+                "data": "34 53 02 EB 00 00 50 E1"
+            }
+        ]
+    },
+    {
+        "gameCode": "ACBJ", // Akumajou Dracula - Gallery of Labyrinth (Japan)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "02007910",
+                "data": "B0 50 02 EB 00 00 5F E3"
+            },
+            {
+                "type": "replace",
+                "address": "02007A00",
+                "data": "74 50 02 EB 00 00 50 E1"
+            }
+        ]
+    },
+    {
+        "gameCode": "ACBJ", // Akumajou Dracula - Gallery of Labyrinth (Japan) (Rev 1)
+        "gameVersion": 1,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "0200753C",
+                "data": "86 32 02 EB 00 00 50 E1"
+            },
+            {
+                "type": "replace",
+                "address": "02007624",
+                "data": "4C 32 02 EB 00 00 5F E3"
+            }
+        ]
+    },
+
+    // YL2E - Luminous Arc 2 (USA)
+    // YL2P - Luminous Arc 2 (Europe)
+    // YL2J - Luminous Arc 2 - Will (Japan)
+    //
+    // These games have a race condition during save initialization that causes them to get stuck on a menu transition.
+    // The patch ignores a return and advances the menu state if the softlock were to happen.
+    {
+        "gameCode": "YL2E", // Luminous Arc 2 (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "02066424",
+                "data": "03 00 00 1A"
+            }
+        ]
+    },
+    {
+        "gameCode": "YL2P", // Luminous Arc 2 (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "02066350",
+                "data": "03 00 00 1A"
+            }
+        ]
+    },
+    {
+        "gameCode": "YL2J", // Luminous Arc 2 - Will (Japan)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "02065F10",
+                "data": "03 00 00 1A"
+            }
+        ]
+    },
+
+    // ASEE - Children of Mana (USA)
+    // ASEP - Children of Mana (Europe)
+    // ASEJ - Seiken Densetsu DS - Children of Mana (Japan)
+    //
+    // These games do not properly wait after performing an async card operation.
+    // The patch replaces a return after a card init function with a jump to CARDi_WaitAsync.
+    {
+        "gameCode": "ASEE", // Children of Mana (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "0209149C",
+                "data": "6F FD FE EA"
+            }
+        ]
+    },
+    {
+        "gameCode": "ASEP", // Children of Mana (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "02091700",
+                "data": "33 FD FE EA"
+            }
+        ]
+    },
+    {
+        "gameCode": "ASEJ", // Seiken Densetsu DS - Children of Mana (Japan)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "02090454",
+                "data": "D8 00 FF EA"
+            }
+        ]
+    },
+
+    // BDEE - Dementium II (USA)
+    // BDEP - Dementium II (Europe)
+    // BDEJ - Tozasareta Byoutou - Dementium II (Japan)
+    //
+    // These games have homebrew AP that issues manual commands to the slot-1 SPI bus to probe the EEPROM chip.
+    // The patch overwrites the result of the AP test as it is stored into a context struct.
+    {
+        "gameCode": "BDEE", // Dementium II (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "020E9120",
+                "data": "02 00 A0 E3 29 00 00 EA"
+            }
+        ]
+    },
+    {
+        "gameCode": "BDEP", // Dementium II (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "020E9120",
+                "data": "02 00 A0 E3 29 00 00 EA"
+            }
+        ]
+    },
+    {
+        "gameCode": "BDEJ", // Tozasareta Byoutou - Dementium II (Japan)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "020D9F64",
+                "data": "05 00 A0 E3 29 00 00 EA"
+            }
+        ]
+    },
+
+    // YGXE - Grand Theft Auto - Chinatown Wars (USA)
+    // YGXP - Grand Theft Auto - Chinatown Wars (Europe)
+    // YGXJ - Grand Theft Auto - Chinatown Wars (Japan)
+    //
+    // These games have a homebrew checksum AP that checks a large chunk of the ARM9 binary including many SDK functions.
+    // The patch replaces the load of the checksum out of context struct with a mov of the expected value.
+    {
+        "gameCode": "YGXE", // Grand Theft Auto - Chinatown Wars (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "020FCB3E",
+                "data": "32 22"
+            }
+        ]
+    },
+    {
+        "gameCode": "YGXP", // Grand Theft Auto - Chinatown Wars (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "020FCB3E",
+                "data": "32 22"
+            }
+        ]
+    },
+    {
+        "gameCode": "YGXJ", // Grand Theft Auto - Chinatown Wars (Japan)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "020FD6A2",
+                "data": "32 22"
+            }
+        ]
+    },
+
+    // CLWE - Star Wars - The Clone Wars - Jedi Alliance (USA)
+    // CLWP - Star Wars - The Clone Wars - Jedi Alliance (Europe)
+    //
+    // These games have an issue where if a vblank interrupt occurs at the wrong moment, it can interrupt a function that is
+    // using a global struct and then modify that struct, which causes the game to softlock when the vblank handler returns.
+    // This is claimed to be due to a circular buffer used for texture loading. The patch rewrites the function to use a vblank wait.
+    {
+        "gameCode": "CLWE", // Star Wars - The Clone Wars - Jedi Alliance (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "0205653C",
+                "data": "03 00 58 6F 01 38 08 D0 05 DF 58 6F 01 38 04 D0 90 20 18 58 01 28 00 D0",
+            }
+        ]
+    },
+    {
+        "gameCode": "CLWP", // Star Wars - The Clone Wars - Jedi Alliance (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "0205653C",
+                "data": "03 00 58 6F 01 38 08 D0 05 DF 58 6F 01 38 04 D0 90 20 18 58 01 28 00 D0",
+            }
+        ]
+    },
+
+    // MetaFortress games below here.
+    //
+    // MetaFortress is an automated system that replaces the typical way DS games are built. It automatically injects
+    // code inside developer-written game functions that conducts checksums on other functions, including SDK functions
+    // and also other game functions that previously were modified with injected checksum calculations.
+    // The checksums themselves are randomized: the way they load pointers, access data, update the checksum state,
+    // perform a checksum finalization, and compare the calculated result to the expected result, as well as what happens
+    // if the checksum fails, are all subject to a high degree of randomization that makes automated static analysis
+    // difficult or impossible.
+    //
+    // This is in stark contrast to DS Protect, which had no per-game randomization (except for The Legend of Zelda: Spirit Tracks)
+    // and required each invokation and response behavior be manually programmed in.
+    //
+    // For example, a basic game function like this:
+    //
+    // void gameFunc(...)
+    // {
+    //     /* Game func stuff */
+    // }
+    //
+    // May be transformed into something like this:
+    //
+    // void modifiedGameFunc(...)
+    // {
+    //     u16* start = ((u16*)0x02013458) + 0x200;   /* Some target range, +random offset */
+    //     u16* end = ((u16*)0x020140B0) + 0x200;
+    //     u32 checksum = 0;
+    //     do
+    //     {
+    //         checksum ^= start[-0x200];             /* Load from inverse offset, add to checksum */
+    //         checksum *= 113041;                    /* Update checksum, random operation */
+    //     }
+    //     while (++start != end);
+    //     checksum ^= checksum >> 7;                 /* Finalize checksum, random procedure */
+    //     checksum += checksum << 2;
+    //     checksum ^= checksum >> 13;
+    //     checksum += checksum << 5;
+    //     if (checksum == 0xFBD4230)                 /* Compare checksum, correct value is often loaded off the stack */
+    //     {
+    //         /* Game func stuff */                  /* Normal game procedure */
+    //     }
+    //     else
+    //     {
+    //         /* Game crash */                       /* Crash somehow, randomized assembly(?) */
+    //     }
+    // }
+    //
+    // The game crash itself is heavily randomized, often assembling an address with obfuscated arithmetic
+    // and then branching to it, sometimes jumping multiple times before eventually entering an infinite loop.
+    //
+    // MetaFortress games typically do this to approximately 200 game functions. Some have 100 or fewer checksums, while others
+    // have over 300. The number of functions to modify, as well as performance-critical functions to avoid modifying, were
+    // controllable by the game developers.
+    //
+    // However, only 8 games, 18 if you count regional releases, utilize MetaFortress. The majority of them are Ubisoft games.
+    //
+    // To patch MetaFortress, the comparisons between calculated checksums and expected checksums are replaced with "cmp r0, r0".
+    // The list of addresses below are where these compares occur (if Thumb, +1 to the address).
+
+    // BDUE - C.O.P. - The Recruit (USA)
+    // BDUP - C.O.P. - The Recruit (Europe)
+    {
+        "gameCode": "BDUE", // BDUE - C.O.P. - The Recruit (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02022284", "020224C8", "02022540", "020225AC", "02022620", "02022690", "0202270C", "02022770",
+                    "02023774", "0202389C", "02023B6C", "02023BD8", "02023C4C", "02023CBC", "02023D38", "02023D9C",
+                    "02023E18", "02024424", "02025F48", "02026408", "02026480", "020278E8", "02028468", "02028A5C",
+                    "02028B94", "02028C44", "02028D00", "02028DA4", "02028E5C", "0202C4FC", "0202C578", "0202C60C",
+                    "0202C688", "0202C7D8", "0202CD60", "0202D3CC", "0202D920", "0202DA80", "0202DAFC", "0202E2C8",
+                    "0202E5CC", "0202E638", "0202E78C", "0202EB98", "0202ECE4", "0202ED54", "0202F42C", "0202F9F8",
+                    "02030128", "02030194", "020304F8", "02030564", "020305D8", "02030AA4", "02030CF0", "02030D9C",
+                    "02030E18", "02031234", "020312AC", "02031348", "020313BC", "0203145C", "02031520", "02031584",
+                    "02031600", "020316E8", "020318B8", "02031974", "020319E8", "02031AF8", "02031B74", "02031BD8",
+                    "02031C8C", "02031D30", "02031DA8", "02031F80", "02031FF4", "02032114", "02032190", "02032318",
+                    "020323B8", "02032514", "0203258C", "02032764", "02032810", "0203288C", "020329B4", "020330EC",
+                    "02033168", "020332F0", "0203BA64", "0203C6EC", "0203C760", "0203D540", "0203EBB0", "0203EC14",
+                    "0203F4CC", "0203F538", "0203FA44", "0203FAB0", "0203FFBC", "02040A84", "02040B00", "02041664",
+                    "020416E0", "02041B24", "02041B9C", "020423F8", "02042870", "020428E0", "02042EA0", "02044128",
+                    "020441A4", "020447B8", "02048E10", "02049764", "020497D8", "02049848", "0204A1A0", "0204A204",
+                    "0205B5C4", "0205B630", "0205F030", "0205F09C", "0205F110", "0208C5EC", "0208C668"
+                ]
+            }
+        ]
+    },
+    {
+        "gameCode": "BDUP", // BDUP - C.O.P. - The Recruit (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02022284", "020224C8", "02022540", "020225AC", "02022620", "02022690", "0202270C", "02022770",
+                    "02023774", "0202389C", "02023B6C", "02023BD8", "02023C4C", "02023CBC", "02023D38", "02023D9C",
+                    "02023E18", "02024424", "02025F48", "02026408", "02026480", "020278E8", "02028468", "02028A5C",
+                    "02028B94", "02028C44", "02028D00", "02028DA4", "02028E5C", "0202C4FC", "0202C578", "0202C60C",
+                    "0202C688", "0202C7D8", "0202CD60", "0202D3CC", "0202D920", "0202DA80", "0202DAFC", "0202E2C8",
+                    "0202E5CC", "0202E638", "0202E78C", "0202EB98", "0202ECE4", "0202ED54", "0202F42C", "0202F9F8",
+                    "02030128", "02030194", "020304F8", "02030564", "020305D8", "02030AA4", "02030CF0", "02030D9C",
+                    "02030E18", "02031234", "020312AC", "02031348", "020313BC", "0203145C", "02031520", "02031584",
+                    "02031600", "020316E8", "020318B8", "02031974", "020319E8", "02031AF8", "02031B74", "02031BD8",
+                    "02031C8C", "02031D30", "02031DA8", "02031F80", "02031FF4", "02032114", "02032190", "02032318",
+                    "020323B8", "02032514", "0203258C", "02032764", "02032810", "0203288C", "020329B4", "020330EC",
+                    "02033168", "020332F0", "0203BA64", "0203C6EC", "0203C760", "0203D540", "0203EBB0", "0203EC14",
+                    "0203F4CC", "0203F538", "0203FA44", "0203FAB0", "0203FFBC", "02040A84", "02040B00", "02041664",
+                    "020416E0", "02041B24", "02041B9C", "020423F8", "02042870", "020428E0", "02042EA0", "02044128",
+                    "020441A4", "020447B8", "02048E10", "02049764", "020497D8", "02049848", "0204A1A0", "0204A204",
+                    "0205B5C4", "0205B630", "0205F030", "0205F09C", "0205F110", "0208C5EC", "0208C668"
+                ]
+            }
+        ]
+    },
+
+    // C7UE - Battle of Giants - Dragons (USA) (Rev 1)
+    // C7UP - Combat of Giants - Dragons (Europe)
+    {
+        "gameCode": "C7UE", // Battle of Giants - Dragons (USA) (Rev 1)
+        "gameVersion": 1,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02008913", "0200E0B5", "0200E1BF", "0200EDD1", "0200EEA1", "0200F72B", "0200F8B9", "0200F99B",
+                    "0200FA81", "0200FC65", "0200FDA7", "020106D7", "02013EB5", "02016D89", "02016E9B", "02017109",
+                    "020172E7", "0201B5B9", "0201C20B", "0201CC51", "0201FE35", "0201FFF5", "020202FF", "02020937",
+                    "02020E5D", "020274D9", "020276E7", "0202863B", "0202C957", "0202CE01", "0202CF47", "0202D00D",
+                    "0202FDE5", "0202FF49", "020300A3", "020344B7", "020355A5", "0203565F", "02035771", "020358D3",
+                    "0203638F", "0203647D", "02036731", "02036E25", "02036F01", "02037411", "02037A73", "020394EF",
+                    "02039621", "020410C9", "02041591", "02042E71", "02042FBD", "02044217", "020445FF", "02047409",
+                    "02048205", "020494E5", "0204973D", "0204A4D5", "0204A705", "0204EB95", "02052137", "02054C33",
+                    "02054E1B", "02056211", "02056CDD", "02089DCD", "0208A0A1", "0208FA17", "02092BAF", "02096809",
+                    "02098443", "0209D099", "020A9121", "020B247D", "020B6DE9", "020B7AD5", "020BC691", "020BCACD",
+                    "020BD56F"
+                ]
+            }
+        ]
+    },
+    {
+        "gameCode": "C7UP", // Combat of Giants - Dragons (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02008A3B", "0200E1DD", "0200E2E7", "0200EEF9", "0200EFC9", "0200F853", "0200F9E1", "0200FAC3",
+                    "0200FBA9", "0200FD8D", "0200FECF", "020107FF", "02013FFD", "02016ED1", "02016FE3", "02017251",
+                    "0201742F", "0201B701", "0201C353", "0201CD99", "0201FF7D", "0202013D", "02020447", "02020A7F",
+                    "02020FA5", "02027621", "0202782F", "02028783", "0202CA9F", "0202CF49", "0202D08F", "0202D155",
+                    "0202FF2D", "02030091", "020301EB", "020345FF", "020356ED", "020357A7", "020358B9", "02035A1B",
+                    "020364D7", "020365C5", "02036879", "02036F6D", "02037049", "02037559", "02037BBB", "02039637",
+                    "02039769", "02041211", "020416D9", "02042FB9", "02043105", "0204435F", "02044747", "02047551",
+                    "0204834D", "0204962D", "02049885", "0204A61D", "0204A84D", "0204ECDD", "0205227F", "02054D7B",
+                    "02054F63", "02056359", "02056E25", "02089F15", "0208A1E9", "0208FB5F", "02092CF7", "02096951",
+                    "0209858B", "0209D1E1", "020A9269", "020B25C5", "020B6F31", "020B7C1D", "020BC7D9", "020BCC15",
+                    "020BD6B7"
+                ]
+            }
+        ]
+    },
+
+    // BIGE - Battle of Giants - Mutant Insects (USA)
+    // BIGP - Combat of Giants - Mutant Insects (Europe)
+    {
+        "gameCode": "BIGE", // Battle of Giants - Mutant Insects (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02000E0D", "020021C9", "020029D7", "02004B61", "02004F71", "020051AF", "02007947", "0200BAD5",
+                    "0200BC73", "0200BD93", "0200C0B9", "0200CB5D", "0200CFB7", "0200D3A3", "0200D6FB", "0200D815",
+                    "0200D8E5", "0200D9C3", "0200DAD1", "02011115", "02011403", "020116B3", "02011E8B", "02013381",
+                    "020135F1", "02018E07", "02019F5F", "0201AF7F", "0201B079", "0201B3EB", "0201B505", "0201B645",
+                    "0201B9B7", "0201BACD", "0201BC71", "0201BD5B", "0201C0C9", "0201C58B", "0201C64F", "0201C7AF",
+                    "0201CC9B", "0201CDB1", "0201CE7D", "0201D17D", "0201D369", "0201D7CD", "0201DD5B", "0201EE6F",
+                    "0201F1ED", "0201F431", "0201F525", "0202010D", "020202A7", "02021545", "0202171B", "02021A15",
+                    "02021B45", "02022BAB", "02022E91", "02024F59", "02025BFB", "02025F27", "020260DD", "020261AF",
+                    "02026293", "02026F67", "02027369", "02027BB3", "02027E53", "02028421", "0202864D", "0202870D",
+                    "020288B1", "0202897F", "02028B7B", "02029FE7", "0202B213", "0202B2F7", "0202B815", "0202B903",
+                    "0202BA65", "0202D02F", "0202D14F", "0202D357", "0202D463", "0202D60F", "0202D713", "0202D7EF",
+                    "0202D961", "0202DCAB", "0202E3E5", "0202ED9F", "0202EF79", "0202F03B", "0202F3BF", "0202F53D",
+                    "0202F69F", "0202F8AF", "0202F971", "02030D69", "020323A5", "02032CBF", "02032DD9", "02032F93",
+                    "02033459", "02033705", "02033809", "020338CD", "020339B7", "02033C33", "02034665", "0203479B",
+                    "02035113", "02035235", "02035617", "020372BD", "02037BF9", "02038745", "0203884D", "02038F79",
+                    "02039081", "020393E5", "0203951F", "02039CB9", "02039DFD", "0203B9B5", "0203BE9F", "0203DF0B",
+                    "0203E1C5", "0203E319", "0203EB05", "0203FB73", "0203FCE7", "0204134F", "02041633", "02041959",
+                    "02042BBF", "02044D43", "02046433", "02046BFD", "02046D55", "02046E93", "020471AF", "020472D3",
+                    "020481B9", "02048BE1", "02048F01", "02048FF5", "020490B9", "02049985", "0204B433", "0204BFE1",
+                    "0204CA35", "0204EC3F", "020771EB", "0207741D", "0207759F", "02078DCB", "02078F45", "0207A4AD",
+                    "0207C0F9", "0207C2B5", "0207C379", "0207C475", "0207C535", "0207C5F5", "0207CAF3", "0207CBDB",
+                    "0207CCD5", "0207D69B", "0207D841", "0207EAAB", "0208182F", "020831AB", "020837FF", "02095C0F",
+                    "020960BF", "020962D3", "0209645B", "020A98B9", "020AA971", "020AAAF9"
+                ]
+            }
+        ]
+    },
+    {
+        "gameCode": "BIGP", // Combat of Giants - Mutant Insects (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02000E0D", "020021C9", "020029D7", "02004B5D", "02004F6D", "020051AB", "02007943", "0200BB51",
+                    "0200BCEF", "0200BE0F", "0200C135", "0200CBD9", "0200D033", "0200D41F", "0200D777", "0200D891",
+                    "0200D961", "0200DA3F", "0200DB4D", "02011191", "0201147F", "0201172F", "02011F07", "020133F3",
+                    "0201366D", "02018E7F", "02019FD7", "0201AFF7", "0201B0F1", "0201B463", "0201B57D", "0201B6BD",
+                    "0201BA2F", "0201BB45", "0201BCE9", "0201BDD3", "0201C141", "0201C603", "0201C6C7", "0201C827",
+                    "0201CD13", "0201CE29", "0201CEF5", "0201D1F5", "0201D3E1", "0201D845", "0201DDD3", "0201EEE7",
+                    "0201F265", "0201F4A9", "0201F59D", "02020185", "0202031F", "020215BD", "02021793", "02021A8D",
+                    "02021BBD", "02022C23", "02022F09", "02024FD1", "02025C73", "02025F9F", "02026155", "02026227",
+                    "0202630B", "02026FDF", "020273E1", "02027C2B", "02027ECB", "02028499", "020286C5", "02028785",
+                    "02028929", "020289F7", "02028BF3", "0202A05F", "0202B28B", "0202B36F", "0202B88D", "0202B97B",
+                    "0202BADD", "0202D0A7", "0202D1C7", "0202D3CF", "0202D4DB", "0202D687", "0202D78B", "0202D867",
+                    "0202D9D9", "0202DD23", "0202E45D", "0202EE17", "0202EFF1", "0202F0B3", "0202F437", "0202F5B5",
+                    "0202F717", "0202F927", "0202F9E9", "02030DE1", "0203241D", "02032D37", "02032E51", "0203300B",
+                    "020334D1", "0203377D", "02033881", "02033945", "02033A2F", "02033CAB", "020346DD", "02034813",
+                    "0203518B", "020352AD", "0203568F", "02037335", "02037C71", "020387BD", "020388C5", "02038FF1",
+                    "020390F9", "0203945D", "02039597", "02039D31", "02039E75", "0203BA2D", "0203BF17", "0203DF83",
+                    "0203E23D", "0203E391", "0203EB7D", "0203FBEB", "0203FD5F", "020413C7", "020416AB", "020419D1",
+                    "02042C37", "02044DBB", "020464AB", "02046C75", "02046DCD", "02046F0B", "02047227", "0204734B",
+                    "02048231", "02048C59", "02048F79", "0204906D", "02049131", "020499FD", "0204B4AB", "0204C059",
+                    "0204CAAD", "0204ECB7", "02077263", "02077495", "02077617", "02078E43", "02078FBD", "0207A525",
+                    "0207C171", "0207C365", "0207C429", "0207C525", "0207C5E5", "0207C6A5", "0207CBA3", "0207CC8B",
+                    "0207CD85", "0207D74B", "0207D8F1", "0207EB5B", "020818DF", "0208325B", "020838AF", "02095CBF",
+                    "0209616F", "02096383", "0209650B", "020A9969", "020AAA21", "020AABA9"
+                ]
+            }
+        ]
+    },
+
+    // BQNE - Captain America - Super Soldier (USA)
+    // BQNP - Captain America - Super Soldier (Europe)
+    {
+        "gameCode": "BQNE", // Captain America - Super Soldier (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02006D9F", "02006EE7", "02009867", "020381E3", "020382B1", "02038471", "020385FB", "02038749",
+                    "02038909", "02038AB1", "02038BED", "02038D87", "02038EAF", "02038FE1", "02039109", "0203926D",
+                    "0203937B", "020393C3", "020393EB", "02039515", "0203966D", "02039891", "020399C3", "020399CD",
+                    "02039A75", "02039BBF", "02039CA5", "0203A0A5", "0203A213", "0203A313", "0203A431", "0203A5AD",
+                    "0203A6B7", "0208BAAB", "020B694B", "020B6C15", "020B6DF1", "020B6EED", "020B6FBD", "020C2005",
+                    "020CE6D9", "020CE7E9", "020CE997", "020CEB55", "020CEF8F", "020CF4EB", "020D035B", "020D0AA3",
+                    "020D7719", "020D782D", "020DB37B", "020DB4CF", "020DB5D1", "020DB697", "020DC5D9", "020DC60B",
+                    "020DCA13", "020DCC0D", "020DCE0B", "020DCE31", "020DCF5B", "020DD067", "020DD16D", "020DD2A1",
+                    "020DD51B", "020DEA15", "020DEB37", "020DED47", "020DEED1", "020DEFF7", "020DF303", "020DF58F",
+                    "020DF59D", "020DF5D9", "020DF5EB", "020DFC83", "020DFDC7", "020E003B", "020E01DD", "020E03EB",
+                    "020E0E2D", "020E10DB", "020E11D1", "020E13EB", "020E15A9", "020E1BAD", "020E1CBB", "020E1DC1",
+                    "020E1F4D", "020E207B", "020E2759", "020E2875", "020E3CBB", "020E3F8B", "020E44AB", "020E4881",
+                    "020E4997", "020E4A3D", "020E4B93", "020E4CCD", "020E544B", "020E58F7", "020E6293", "020E64FB",
+                    "020E65E7", "020E6C01", "020E6C13", "020E6C39", "020E6F19", "020E7031", "020E70D5", "020E71ED",
+                    "020E7305", "020E741D", "020E7535", "020E764D", "020E7765", "020E787F", "020E78CF", "020E7A13",
+                    "020E7F11", "020E8063", "020E818D", "020E9A83", "020EAB81", "020EABCF", "020EABDD", "020EAF99",
+                    "020EB7F3", "020EB8EF", "020EBB95", "020EBCB5", "020EBCC9", "020EBF05", "020EC079", "020EC175",
+                    "020EC2B5", "020EC3F5", "020EC535", "020EC68F", "020EC803", "020EC917", "020ECA11", "020ECB01",
+                    "020ECBF1", "020ECCE1", "020ECE21", "020ECF11", "020ED001", "020ED0F1", "020ED231", "020ED38B",
+                    "020ED49F", "020ED5AF", "020ED6B5", "020EDE65", "020EE03F", "020EE13B", "020EE289", "020EE37D",
+                    "020EE525", "020EE64B", "020EE815", "020EEA03", "020EEAF3", "020EEE19", "020EEFE9", "020EF265",
+                    "020EF415", "020EF837", "020EF925", "020EFA23", "020EFFC3", "020F00F5", "020F030D", "020F055B",
+                    "020F0701", "020F07D5", "020F0909", "0211C243", "0211C3AB", "0211C49D", "0211C541", "0211C721",
+                    "0211C961", "0211D1A7", "0211D2CD", "0211D403", "0211D525"
+                ]
+            }
+        ]
+    },
+    {
+        "gameCode": "BQNP", // Captain America - Super Soldier (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02006D9F", "02006EE7", "02009867", "020381E3", "020382B1", "02038471", "020385FB", "02038749",
+                    "02038909", "02038AB1", "02038BED", "02038D87", "02038EAF", "02038FE1", "02039109", "0203926D",
+                    "0203937B", "020393C3", "020393EB", "02039515", "0203966D", "02039891", "020399C3", "020399CD",
+                    "02039A75", "02039BBF", "02039CA5", "0203A0A5", "0203A213", "0203A313", "0203A431", "0203A5AD",
+                    "0203A6B7", "0208BAAB", "020B694B", "020B6C15", "020B6DF1", "020B6EED", "020B6FBD", "020C2035",
+                    "020CE709", "020CE819", "020CE9C7", "020CEB85", "020CEFBF", "020CF51B", "020D038B", "020D0AD3",
+                    "020D7749", "020D785D", "020DB3AB", "020DB4FF", "020DB601", "020DB6C7", "020DC609", "020DC63B",
+                    "020DCA43", "020DCC3D", "020DCE3B", "020DCE61", "020DCF8B", "020DD097", "020DD19D", "020DD2D1",
+                    "020DD54B", "020DEA49", "020DEB6B", "020DED7B", "020DEF25", "020DF04B", "020DF357", "020DF5E3",
+                    "020DF5F1", "020DF62D", "020DF63F", "020DFCD7", "020DFE1B", "020E008F", "020E0231", "020E043F",
+                    "020E0E81", "020E112F", "020E1225", "020E145F", "020E161D", "020E1C21", "020E1D2F", "020E1E35",
+                    "020E1FC1", "020E20EF", "020E27CD", "020E28E9", "020E3D2F", "020E3FFF", "020E451F", "020E48F5",
+                    "020E4A0B", "020E4AB1", "020E4C07", "020E4D41", "020E54BF", "020E596B", "020E6307", "020E656F",
+                    "020E665B", "020E6C75", "020E6C87", "020E6CAD", "020E6F8D", "020E70A5", "020E7149", "020E7261",
+                    "020E7379", "020E7491", "020E75A9", "020E76C1", "020E77D9", "020E78F3", "020E7943", "020E7A87",
+                    "020E7F85", "020E80D7", "020E8201", "020E9AF7", "020EABF5", "020EAC43", "020EAC51", "020EB00D",
+                    "020EB867", "020EB963", "020EBC09", "020EBD29", "020EBD3D", "020EBF79", "020EC0ED", "020EC1E9",
+                    "020EC329", "020EC469", "020EC5A9", "020EC703", "020EC877", "020EC98B", "020ECA85", "020ECB75",
+                    "020ECC65", "020ECD55", "020ECE95", "020ECF85", "020ED075", "020ED165", "020ED2A5", "020ED3FF",
+                    "020ED513", "020ED623", "020ED729", "020EDED9", "020EE0B3", "020EE1AF", "020EE2FD", "020EE3F1",
+                    "020EE599", "020EE6BF", "020EE889", "020EEA77", "020EEB67", "020EEE8D", "020EF05D", "020EF2D9",
+                    "020EF489", "020EF8AB", "020EF999", "020EFA97", "020F0037", "020F0169", "020F0381", "020F05CF",
+                    "020F0775", "020F0849", "020F097D", "0211C2B7", "0211C41F", "0211C511", "0211C5B5", "0211C795",
+                    "0211C9D5", "0211D21B", "0211D341", "0211D477", "0211D599"
+                ]
+            }
+        ]
+    },
+
+    // VIDE - Imagine - Resort Owner (USA) (NDSi Enhanced)
+    // VIDV - Imagine - Dream Resort (Europe) (NDSi Enhanced)
+    {
+        "gameCode": "VIDE", // Imagine - Resort Owner (USA) (NDSi Enhanced)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02005408", "02005740", "020058AC", "02006024", "02006654", "02006894", "02006AFC", "020070C4",
+                    "020073C4", "02007570", "020079BC", "02007F58", "020089FC", "02008DF0", "020091D8", "02009740",
+                    "020098A8", "02009A80", "02009BBC", "02009D1C", "02009E68", "0200A11C", "0200A758", "0200AB74",
+                    "0200AF64", "0200B094", "0200B430", "0200B75C", "0200BBA8", "0200C11C", "0200C254", "0200C428",
+                    "0200C700", "0200C870", "0200CA20", "0200CD94", "0200CE60", "0200D21C", "0200DAEC", "0200E1C4",
+                    "0200E4BC", "0200E938", "0200ED54", "0200EF74", "0200F238", "0200F394", "0200F608", "0200F720",
+                    "0200FA50", "0200FB68", "0200FE84", "02010844", "0201097C", "02010ABC", "020110F8", "02011428",
+                    "02011614", "02011900", "02011DB4", "02011F0C", "02013690", "020138A0", "02013A5C", "02013C90",
+                    "02013E48", "02014004", "020141CC", "02014448", "0201457C", "020146F4", "02014B90", "02014D18",
+                    "02015058", "02015788", "02016330", "0201692C", "02016B04", "02017294", "020175F0", "02017778",
+                    "0201789C", "02017DE4", "020182D8", "02018440", "020186E0", "02018924", "0201973C", "02019BCC",
+                    "0201A7F8", "0201AE64", "0201B138", "0201B43C", "0201B644", "0201B980", "0201BBF0", "0201C5A0",
+                    "0201CBB0", "0201CD18", "0201CE88", "0201CF60", "0201D1A8", "0201D46C", "0201D5B4", "0201D980",
+                    "0201DAB0", "0201DEFC", "0201E518", "0201E7C4", "0201ED34", "0201EE70", "0201F03C", "0201F208",
+                    "0201F454", "0201F574", "0201F6A8", "020203BC", "020204D0", "02020AA0", "02020EEC", "02021264",
+                    "02021360", "02021554", "02021838", "020221C4", "02022814", "02022B0C", "02022D6C", "02022E68",
+                    "020234EC", "02023624", "020237A8", "02023F94", "020240BC", "020241F0", "0202460C", "02024914",
+                    "02024AA8", "02024C64", "0202504C", "0202516C", "020253CC", "0202550C", "02025640", "02025DA0",
+                    "02025EB4", "020263A8", "02026524", "02026654", "02026CE0", "02026EB8", "02027024", "02027414",
+                    "02028588", "020287C0", "02029334", "02029BA4", "02029E38", "0202AC70", "0202AFB8", "0202B18C",
+                    "0202B6A4", "0202BA00", "0202BCCC", "0202BE94", "0202BFE0", "0202E358", "0202ECBC", "0202F2E0",
+                    "0202F544", "0202F6E8", "020300C4", "02030804", "020312D8", "02031868", "02031DB4", "02032054",
+                    "02032210", "0203284C", "02032970", "02032B04", "0203313C", "02033290", "020333C0", "02033500",
+                    "02034778", "02034B40", "02034C9C", "02035388", "02035A40", "02035B34", "02035C78", "02036734",
+                    "02036970", "02036B34", "02037038", "02037270", "020373AC", "02037578", "02037AFC", "02037C44",
+                    "0203853C", "02038C3C", "02038FC4", "0203944C", "020395A4", "02039724", "02039920", "0203A6D4",
+                    "0203A8C4", "0203AA94", "0203B110", "0203B298", "0203B3B0", "0203B90C", "0203BFF0", "0203C1E8",
+                    "0203C510", "0203C6AC", "0203CAC4", "0203CC4C", "0203CFA0", "0203D1F4", "0203F4A8", "0203F8C4",
+                    "0203FBB4", "0203FE54", "020404F0", "02040640", "020407F8", "020409BC", "02041124", "02041660",
+                    "02041788", "020418CC", "02041A38", "02041B50", "02041CD4", "02041DFC", "02041F30", "02042074",
+                    "020425B0", "020427BC", "0204292C", "02042B58", "02043010", "02043368", "020434EC", "02043994",
+                    "02043C5C", "02043D64", "02043E80", "02044DD0", "02044F48", "020451E0", "02045488"
+                ]
+            }
+        ]
+    },
+    {
+        "gameCode": "VIDV", // Imagine - Dream Resort (Europe) (NDSi Enhanced)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02005408", "02005740", "020058AC", "02006024", "02006654", "02006894", "02006AFC", "020070C4",
+                    "020073C4", "02007570", "020079BC", "02007F58", "020089FC", "02008DF0", "020091D8", "02009740",
+                    "020098A8", "02009A80", "02009BBC", "02009D1C", "02009E68", "0200A11C", "0200A804", "0200AC20",
+                    "0200B010", "0200B140", "0200B4DC", "0200B808", "0200BC54", "0200C1C8", "0200C300", "0200C4D4",
+                    "0200C7AC", "0200C91C", "0200CACC", "0200CE40", "0200CF0C", "0200D2C8", "0200DB98", "0200E270",
+                    "0200E568", "0200E9E4", "0200EE00", "0200F020", "0200F2E4", "0200F440", "0200F6B4", "0200F7CC",
+                    "0200FAFC", "0200FC14", "0200FF30", "020108F0", "02010A28", "02010B68", "020111A4", "020114D4",
+                    "020116C0", "020119AC", "02011E60", "02011FB8", "0201373C", "0201394C", "02013B08", "02013D3C",
+                    "02013EF4", "020140B0", "02014278", "020144F4", "02014628", "020147A0", "02014C3C", "02014DC4",
+                    "02015104", "02015834", "020163DC", "020169D8", "02016BB0", "02017340", "0201769C", "02017824",
+                    "02017948", "02017E90", "02018384", "020184EC", "0201878C", "020189D0", "020197E8", "02019C78",
+                    "0201A8A4", "0201AF10", "0201B1E4", "0201B4E8", "0201B6F0", "0201BA2C", "0201BC9C", "0201C64C",
+                    "0201CC5C", "0201CDC4", "0201CF34", "0201D00C", "0201D254", "0201D518", "0201D660", "0201DA2C",
+                    "0201DB5C", "0201DFA8", "0201E5C4", "0201E870", "0201EDE0", "0201EF1C", "0201F0E8", "0201F2B4",
+                    "0201F500", "0201F620", "0201F754", "02020468", "0202057C", "02020B4C", "02020F98", "02021310",
+                    "0202140C", "02021600", "020218E4", "02022270", "020228C0", "02022BB8", "02022E18", "02022F14",
+                    "02023598", "020236D0", "02023854", "02024040", "02024168", "0202429C", "020246B8", "020249C0",
+                    "02024B54", "02024D10", "020250F8", "02025218", "02025478", "020255B8", "020256EC", "02025E4C",
+                    "02025F60", "02026454", "020265D0", "02026700", "02026D8C", "02026F64", "020270D0", "020274C0",
+                    "02028634", "0202886C", "020293E0", "02029C50", "02029EE4", "0202AD1C", "0202B064", "0202B238",
+                    "0202B750", "0202BAAC", "0202BD78", "0202BF40", "0202C08C", "0202E404", "0202ED68", "0202F38C",
+                    "0202F5F0", "0202F794", "02030170", "020308B0", "02031384", "02031914", "02031E60", "02032100",
+                    "020322BC", "020328F8", "02032A1C", "02032BB0", "020331E8", "0203333C", "0203346C", "020335AC",
+                    "02034824", "02034BEC", "02034D48", "02035434", "02035AEC", "02035BE0", "02035D24", "020367E0",
+                    "02036A1C", "02036BE0", "020370E4", "0203731C", "02037458", "02037624", "02037BA8", "02037CF0",
+                    "020385E8", "02038CE8", "02039070", "020394F8", "02039650", "020397D0", "020399CC", "0203A780",
+                    "0203A970", "0203AB40", "0203B1BC", "0203B344", "0203B45C", "0203B9B8", "0203C09C", "0203C294",
+                    "0203C5BC", "0203C758", "0203CB70", "0203CCF8", "0203D04C", "0203D2A0", "0203F554", "0203F970",
+                    "0203FC60", "0203FF00", "0204059C", "020406EC", "020408A4", "02040A68", "020411D0", "02041724",
+                    "0204184C", "02041990", "02041AFC", "02041C14", "02041D98", "02041EC0", "02041FF4", "02042138",
+                    "02042674", "02042880", "020429F0", "02042C1C", "020430D4", "0204342C", "020435B0", "02043A58",
+                    "02043D20", "02043E28", "02043F44", "02044E94", "0204500C", "020452A4", "0204554C"
+                ]
+            }
+        ]
+    },
+
+    // CHNE - Might & Magic - Clash of Heroes (USA)
+    // CHNP - Might & Magic - Clash of Heroes (Europe)
+    {
+        "gameCode": "CHNE", // Might & Magic - Clash of Heroes (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "020047DC", "020050D0", "0200635C", "02007184", "020074FC", "020077D0", "0200803C", "0200859C",
+                    "02008E60", "02009404", "020095F4", "02009840", "0200A5F4", "0200A6FC", "0200A898", "0200AFB8",
+                    "0200B530", "0200B73C", "0200CF98", "0200D0E8", "0200D304", "0200D440", "0200D758", "0200D8FC",
+                    "0200DACC", "0200DC14", "0200DDF8", "0200E3A0", "0200E77C", "0200EA5C", "0200ECBC", "0200EE44",
+                    "0200EFAC", "02010DCC", "02010FB4", "02011438", "020115A8", "020116F0", "0201188C", "02011DDC",
+                    "020153A8", "02015518", "0201592C", "02015AD4", "02015E7C", "02018590", "02018F78", "020191A0",
+                    "02019D10", "02019E88", "0201BA9C", "0201BBD8", "0201BD14", "0201C760", "0201C9A4", "0201CAA4",
+                    "0201D9E0", "0201DB8C", "0201DF00", "0201E47C", "0201E8E8", "0201EAF4", "0201F41C", "02020E24",
+                    "02021228", "02021578", "02021A04", "02021B64", "02021C68", "020220B8", "02022600", "020227FC",
+                    "02023730", "02023868", "02023A0C", "02023B7C", "02023CC4", "0202436C", "020245B0", "02025944",
+                    "02026860", "02026998", "0202702C", "02029E20", "0202AA4C", "0202AF70", "0202B13C", "0202B584",
+                    "0202BC04", "0202BF54", "0202C05C", "0202C98C", "0202CBDC", "0202CCF0", "0202D0A0", "0202D1A8",
+                    "0202D4C0", "0202DAB0", "0202FD00", "020301CC", "02030800", "02031FB0", "020321FC", "02032C34",
+                    "020335F8", "02033AB4", "02034430", "0203475C", "0203556C", "02035C4C", "020360C0", "020371AC",
+                    "02037320", "02038DB4", "020399A8", "0203A954", "0203AB88", "0203AFF4", "0203B148", "0203B6B8",
+                    "0203B8E8", "0203C0CC", "0203C1E8", "0203C2E0", "0203C4F0", "0203C6D8", "0203C830", "0203CA68",
+                    "0203CBD8", "0203CD58", "0203D094", "0203D20C", "0203D448", "0203EB2C", "0203EC70", "0203EDB4",
+                    "0203EFB8", "0203FABC", "0203FF24", "02040090", "0204085C", "02040DC0", "0204127C", "02041524",
+                    "020416BC", "02041810", "02041BB4", "02041FA8", "0204286C", "020429E8", "020453D8", "02045610",
+                    "02045C88", "02045F44", "0204637C", "02047898", "02047B28", "020481F4", "0204851C", "02048740",
+                    "020488E0", "02049B64", "0204B978", "0204BD3C", "0204BE58", "0204C944", "0204E194", "0204EF94",
+                    "0204FD7C", "020502F8", "02050B44", "02050C94", "020516A4", "02051800", "02051F58", "02052498",
+                    "02052D80", "02053B74", "0205406C", "02055718", "02055940", "02055A54", "02055DF8", "02055FC0",
+                    "020562B4", "020564C4", "02056618", "0205708C", "020571EC", "02057774", "02057AD0", "02057BE0",
+                    "02057E24", "02057F38", "020582B4", "020585C8", "02058A48", "0205A130", "0205A618", "0205AAF4",
+                    "0205BE48", "0205BFA4", "0205E4A8", "0205E9FC", "02060208", "02060A34", "02060C60", "020616F8",
+                    "020640EC", "02064548", "02065DC8", "02067830", "0206AF58", "0206B180", "0206BF30", "0206C86C",
+                    "0206CDFC", "0206D08C", "0206D5C8", "0206DAC4", "0206DC10", "0206DD7C", "0206E1BC", "0206E534",
+                    "0206F700", "0206F8B0", "02070174", "02070D84", "020713EC", "020718E0", "02071CC0", "020725E0",
+                    "020755EC", "02075C74", "02075E04", "02075F54", "02076708", "0207687C", "020769B8", "02076ACC",
+                    "02078090", "02079100", "02079738", "02079960", "02079AC0", "02079BE8", "02079CF4", "02079E48",
+                    "02079F80", "0207A31C", "0207A4C8", "0207C53C", "0207C7EC", "0207DA18", "0207DC68", "0207DF70",
+                    "0207E1B0", "0207E580", "0207E830", "0207EB7C", "0207ECDC", "0207EDF4", "0207FC64", "02080308",
+                    "02082F08", "02083038", "02083E88", "0208408C", "020841E8", "020843A0", "02084808", "02084D9C",
+                    "02084F38", "02085064", "02085254", "02085408", "02085690", "020866D0", "02087358", "02087554",
+                    "02087800", "020879B8", "02087B00", "02087C3C", "02087D44", "02087E78", "02088734", "02088918",
+                    "02088FA4", "020893DC", "02089570", "0208A328", "0208ADD0", "0208AF98", "0208B160", "0208C4CC",
+                    "0208D240", "0208D56C", "0208DB98", "0208DD80", "020909A8", "02090BE0", "02091138", "02091424",
+                    "020918CC", "02092918", "020931D0", "0209341C", "0209370C", "02093A0C", "02096464", "02096574",
+                    "02096754", "02096B28", "02096D74", "02096EAC", "020971AC", "0209ACFC", "0209AE1C", "0209AF88",
+                    "0209BD10", "0209BE7C", "0209C1FC", "0209C32C", "0209C438", "0209C558", "0209C680", "0209D6B0",
+                    "020A1098", "020A123C", "020A1460", "020A173C", "020A1BA0", "020A1CE0", "020A1F74", "020A2148",
+                    "020A2344", "020A34F4", "020A448C", "020A4740", "020A4DC0", "020A4F50", "020A50C4", "020A51CC",
+                    "020A5A30", "020A5BA8", "020A5E3C", "020A5F50", "020A6534", "020A6D40", "020A74E8", "020A75F4",
+                    "020A7710", "020A8344", "020A8764", "020A89BC", "020A8B5C", "020A955C", "020A96CC"
+                ]
+            }
+        ]
+    },
+    {
+        "gameCode": "CHNP", // Might & Magic - Clash of Heroes (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "020047DC", "020050D0", "0200635C", "02007184", "020074FC", "020077D0", "0200803C", "0200859C",
+                    "02008E60", "02009404", "020095F4", "02009840", "0200A63C", "0200A744", "0200A8E0", "0200B000",
+                    "0200B578", "0200B784", "0200CFE0", "0200D130", "0200D34C", "0200D488", "0200D7A0", "0200D944",
+                    "0200DB14", "0200DC5C", "0200DE40", "0200E3E8", "0200E7C4", "0200EAA4", "0200ED04", "0200EE8C",
+                    "0200EFF4", "02010E14", "02010FFC", "02011480", "020115F0", "02011738", "020118D4", "02011E24",
+                    "020153F0", "02015560", "02015974", "02015B1C", "02015EC4", "020185D8", "02018FC0", "020191E8",
+                    "02019D58", "02019ED0", "0201BAE4", "0201BC20", "0201BD5C", "0201C7AC", "0201C9F0", "0201CAF0",
+                    "0201DA2C", "0201DBD8", "0201DF4C", "0201E4C8", "0201E934", "0201EB40", "0201F468", "02020E70",
+                    "02021274", "020215C4", "02021A50", "02021BB0", "02021CB4", "02022104", "0202264C", "02022848",
+                    "0202377C", "020238B4", "02023A58", "02023BC8", "02023D10", "020243B8", "020245FC", "02025990",
+                    "020268AC", "020269E4", "02027078", "02029E6C", "0202AA98", "0202AFBC", "0202B188", "0202B5D0",
+                    "0202BC90", "0202BFE0", "0202C0E8", "0202CA18", "0202CC68", "0202CD7C", "0202D12C", "0202D234",
+                    "0202D54C", "0202DB3C", "0202FD8C", "02030258", "0203088C", "0203203C", "02032288", "02032CC0",
+                    "02033684", "02033B40", "020344EC", "02034818", "02035628", "02035D08", "0203617C", "02037268",
+                    "020373DC", "02038EA0", "02039A94", "0203AA40", "0203AC74", "0203B0E4", "0203B238", "0203B7A8",
+                    "0203B9D8", "0203C1BC", "0203C2D8", "0203C3D0", "0203C5E0", "0203C7C8", "0203C920", "0203CB58",
+                    "0203CCC8", "0203CE48", "0203D184", "0203D2FC", "0203D538", "0203EC1C", "0203ED60", "0203EEA4",
+                    "0203F0A8", "0203FBAC", "02040014", "02040180", "0204094C", "02040EB0", "0204136C", "02041614",
+                    "020417AC", "02041900", "02041CA4", "02042098", "0204295C", "02042AD8", "02045504", "0204573C",
+                    "02045DB4", "02046070", "020464A8", "020479C4", "02047C54", "02048320", "02048648", "0204886C",
+                    "02048A0C", "02049C90", "0204BAA4", "0204BE68", "0204BF84", "0204CA70", "0204E2C0", "0204F0C0",
+                    "0204FEA8", "02050424", "02050C70", "02050DC0", "020517D0", "0205192C", "02052084", "020525C4",
+                    "02052EAC", "02053CA8", "0205412C", "020557D8", "02055A00", "02055B14", "02055EB8", "02056080",
+                    "02056374", "02056584", "020566D8", "0205714C", "020572AC", "02057834", "02057B90", "02057CA0",
+                    "02057EE4", "02057FF8", "02058378", "0205868C", "02058B0C", "0205A1F4", "0205A6DC", "0205ABB8",
+                    "0205BF0C", "0205C068", "0205E56C", "0205EAC0", "020602CC", "02060AF8", "02060D24", "02061774",
+                    "0206415C", "020645B4", "02065E34", "0206789C", "0206AFC4", "0206B1EC", "0206BF9C", "0206C8D8",
+                    "0206CE68", "0206D0F8", "0206D634", "0206DB30", "0206DC7C", "0206DDE8", "0206E228", "0206E5A0",
+                    "0206F76C", "0206F91C", "020701E0", "02070DF0", "02071458", "0207194C", "02071D2C", "0207264C",
+                    "02075658", "02075CE0", "02075E70", "02075FC0", "02076774", "020768E8", "02076A24", "02076B38",
+                    "020780FC", "0207916C", "020797A4", "020799CC", "02079B2C", "02079C54", "02079D60", "02079EB4",
+                    "02079FEC", "0207A388", "0207A534", "0207C5A8", "0207C858", "0207DA84", "0207DCD4", "0207DFDC",
+                    "0207E21C", "0207E5EC", "0207E89C", "0207EBE8", "0207ED48", "0207EE60", "0207FCD0", "02080374",
+                    "02083020", "02083150", "02083FA0", "020841A4", "02084300", "020844B8", "02084920", "02084EB4",
+                    "02085050", "0208517C", "0208536C", "02085520", "020857A8", "020867E8", "02087470", "0208766C",
+                    "020878F8", "02087AB0", "02087BF8", "02087D34", "02087E3C", "02087F70", "0208882C", "02088A10",
+                    "0208909C", "020894D4", "02089668", "0208A420", "0208AEC8", "0208B090", "0208B258", "0208C5C8",
+                    "0208D33C", "0208D668", "0208DC94", "0208DE7C", "02090AA4", "02090CDC", "02091234", "02091520",
+                    "020919C8", "02092A14", "020932CC", "02093518", "02093808", "02093B08", "02096560", "02096670",
+                    "02096850", "02096C24", "02096E70", "02096FA8", "020972A8", "0209ADF8", "0209AF18", "0209B084",
+                    "0209BE0C", "0209BF78", "0209C2F8", "0209C428", "0209C534", "0209C654", "0209C77C", "0209D7AC",
+                    "020A1194", "020A1338", "020A155C", "020A1838", "020A1C9C", "020A1DDC", "020A2070", "020A2244",
+                    "020A2440", "020A35F0", "020A4588", "020A483C", "020A4EBC", "020A504C", "020A51C0", "020A52C8",
+                    "020A5B2C", "020A5CA4", "020A5F38", "020A604C", "020A6630", "020A6E3C", "020A75E4", "020A76F0",
+                    "020A780C", "020A8440", "020A8860", "020A8AB8", "020A8C58", "020A9658", "020A97C8"
+                ]
+            }
+        ]
+    },
+
+    // VPPE - Prince of Persia - The Forgotten Sands (USA) (NDSi Enhanced)
+    // VPPV - Prince of Persia - The Forgotten Sands (Europe) (NDSi Enhanced)
+    {
+        "gameCode": "VPPE", // Prince of Persia - The Forgotten Sands (USA) (NDSi Enhanced)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "0200569C", "02005D2C", "020061F4", "02006480", "02006790", "02006A28", "02007000", "02007108",
+                    "02007480", "02007594", "020076C0", "0200783C", "02008024", "020081AC", "020084D0", "02009FF0",
+                    "0200A104", "0200A7EC", "0200A9C8", "0200BF88", "02011F98", "02013D54", "02013F60", "020141E8",
+                    "02014F50", "02015760", "02015EEC", "02015FD4", "02016480", "020171B0", "02017584", "02017718",
+                    "02018EEC", "0201964C", "02019C44", "0201D274", "0201D39C", "0201E654", "0201E790", "0201ED08",
+                    "0201EE74", "02020554", "0202187C", "02021ACC", "02022B34", "02023904", "02023A84", "02024080",
+                    "020241C8", "020242FC", "020244E4", "02024974", "02024AAC", "0202693C", "02026A84", "020280E0",
+                    "020282E0", "0202899C", "02028B08", "02028C40", "020292EC", "020294BC", "020297BC", "02029A58",
+                    "0202A4CC", "0202A7F4", "0202A930", "0202ABE4", "0202AFA4", "0202B1CC", "0202B2E4", "0202B414",
+                    "0202B8D4", "0202C264", "0202C55C", "0202D3A8", "0202D74C", "0202D8EC", "0202DBCC", "0202DF8C",
+                    "0202E0E8", "0202F0D0", "0202F27C", "0202FCCC", "020302A8", "02030698", "02031558", "02031784",
+                    "02031C28", "02031D64", "02031EC0", "02032558", "02032D5C", "02033250", "02033538", "02033720",
+                    "02033910", "02033B64", "02035D28", "0203638C", "020384F4", "02038904", "0205308C", "020531B0",
+                    "020532EC", "02053878", "020539C4", "02054098", "020550D0", "02056A60", "02056B80", "02056E4C",
+                    "02057BA8", "02057CAC", "02057F04", "0205814C", "02058324", "020584A0", "020585BC", "020589E0",
+                    "02058C14", "020590C8", "0205921C", "0205A054", "0205A1A8", "0205A330", "0205A620", "02067220",
+                    "02067398", "02067518", "02067774", "02067CB8", "02068540", "02068ED8", "0206A558", "0206B0B8",
+                    "0206D904", "0206DA68", "0206E4EC", "0206F3A4", "0206F4A4", "0206F780", "0206FFEC", "02070120",
+                    "020703A0", "020707BC", "02073858", "02075414", "0207572C", "02075928", "02075C54", "02075DF0",
+                    "02075F50", "020763B8", "02077530", "02077D04", "0207872C", "02078CF0", "02078DE4", "02079030",
+                    "02079778", "020799B0", "02079AD0", "02079CDC", "02079F00", "0207A7DC", "0207A9B4", "0207B200",
+                    "0207B4C0", "0207B620", "0207C064", "0207CAFC", "0207CF84", "0207D958", "0207DB28", "0207DC6C",
+                    "0207DE00", "0207E430", "0207E8C0", "0207E9E0", "0207F0F8", "0207F300", "0207F7CC", "0207F8F0",
+                    "02080D20", "02081570", "020816A4", "020817CC", "02081918", "02081DE0", "02081F04", "02082178",
+                    "020A93E4", "020A9674", "020A978C", "020AB830", "020AB958", "020AC61C", "020ACD20", "020AD0D4",
+                    "020AD638", "020AD8B4", "020ADC20", "020AE4B8", "020AE688", "020AEB60", "020B046C", "020B0778",
+                    "020B2018", "020B2138", "020B2370", "020B2484", "020B2664", "020B2A50", "020B2B8C", "020B2CF8",
+                    "020B2E2C", "020B35A0", "020B3704", "020B4BC4", "020B5034", "020B513C", "020B5288", "020B54E0",
+                    "020B630C", "020BBF38", "020BC09C", "020BDFF0", "020BE72C", "020C12EC", "020C1ECC", "020C2194",
+                    "020C318C", "020C35D4", "020C4DC0", "020C7A4C", "020C93C8", "020C94F0", "020CAFC8", "020CD684",
+                    "020CE26C", "020D0094", "020D285C", "020D2E84", "020D2F90", "020D6450", "020D6598", "020DAC74",
+                    "020DADA4", "020DB600", "020DDE6C", "020E0168", "020E02A4", "020E03E8", "020E1F20", "020E2090",
+                    "020E23A4", "020E2ECC", "020E72DC", "020E7404", "020E7534", "020E871C", "020EAD44", "020EAE90",
+                    "020EAFE4", "020EB510", "020ED0E0", "020ED234", "020F0180", "020F02B0", "020FCC24", "021008C0",
+                    "02101B94", "02102410", "02102608", "0210310C", "021032C8", "02103414", "02103568", "021036AC",
+                    "021037D0", "021038D8", "02103A1C", "02103CFC", "021045B0", "02104704", "02104870", "02104A48",
+                    "02104FF4", "02105FF4", "0210612C", "0210626C", "02106784", "02106BB4", "02106D0C", "02106F78",
+                    "021070AC", "021072A4", "021075E8", "02107798", "021078E0", "02107B08", "02107C34", "02107E10",
+                    "021082DC", "021083E0", "02108540", "02108678", "02108788", "02108880", "021089A0", "02108B40",
+                    "02108C8C", "02108DA0", "02108EE8", "02109020", "02109350", "02109584", "0210A0C0", "0210A6E0",
+                    "0210AEE0", "0210B188", "0210B488", "0210B5FC", "0210B774", "0210B878", "0210BB68", "0210BC48",
+                    "0210BDB8", "0210BFB8", "0210C634", "0210D408", "0210D758", "0210E310", "0210F360", "02112F58",
+                    "02113578", "021136A0", "02115298", "02115C00", "02115D48", "02115E88"
+                ]
+            }
+        ]
+    },
+    {
+        "gameCode": "VPPV", // Prince of Persia - The Forgotten Sands (Europe) (NDSi Enhanced)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "0200569C", "02005D2C", "020061F4", "02006480", "02006790", "02006A28", "02007000", "02007108",
+                    "02007480", "02007594", "020076C0", "0200783C", "02008024", "020081AC", "020084D0", "02009FF0",
+                    "0200A104", "0200A7EC", "0200A9C8", "0200BF88", "02011F98", "02013D54", "02013F60", "020141E8",
+                    "02014F50", "02015760", "02015EEC", "02015FD4", "02016480", "020171B0", "02017584", "02017718",
+                    "02018EEC", "0201964C", "02019C44", "0201D274", "0201D39C", "0201E654", "0201E790", "0201ED08",
+                    "0201EE74", "02020554", "0202187C", "02021ACC", "02022B34", "02023904", "02023A84", "02024080",
+                    "020241C8", "020242FC", "020244E4", "02024974", "02024AAC", "0202693C", "02026A84", "020280E0",
+                    "020282E0", "0202899C", "02028B08", "02028C40", "020292EC", "020294BC", "020297BC", "02029A58",
+                    "0202A4CC", "0202A7F4", "0202A930", "0202ABE4", "0202AFA4", "0202B1CC", "0202B2E4", "0202B414",
+                    "0202B8D4", "0202C264", "0202C55C", "0202D3A8", "0202D74C", "0202D8EC", "0202DBCC", "0202DF8C",
+                    "0202E0E8", "0202F0D0", "0202F27C", "0202FCCC", "020302A8", "02030698", "02031558", "02031784",
+                    "02031C28", "02031D64", "02031EC0", "02032558", "02032D5C", "02033250", "02033538", "02033720",
+                    "02033910", "02033B64", "02035D28", "0203638C", "020384F4", "02038904", "0205308C", "020531B0",
+                    "020532EC", "02053878", "020539C4", "02054098", "020550D0", "02056A60", "02056B80", "02056E4C",
+                    "02057BA8", "02057CAC", "02057F04", "0205814C", "02058324", "020584A0", "020585BC", "020589E0",
+                    "02058C14", "020590C8", "0205921C", "0205A054", "0205A1A8", "0205A330", "0205A620", "02067220",
+                    "02067398", "02067518", "02067774", "02067CB8", "02068540", "02068ED8", "0206A558", "0206B0B8",
+                    "0206D904", "0206DA68", "0206E4EC", "0206F3A4", "0206F4A4", "0206F780", "0206FFEC", "02070120",
+                    "020703A0", "020707BC", "02073858", "02075414", "0207572C", "02075928", "02075C54", "02075DF0",
+                    "02075F50", "020763B8", "02077530", "02077D04", "0207872C", "02078CF0", "02078DE4", "02079030",
+                    "02079778", "020799B0", "02079AD0", "02079CDC", "02079F00", "0207A7DC", "0207A9B4", "0207B200",
+                    "0207B4C0", "0207B620", "0207C064", "0207CAFC", "0207CF84", "0207D958", "0207DB28", "0207DC6C",
+                    "0207DE00", "0207E430", "0207E8C0", "0207E9E0", "0207F0F8", "0207F300", "0207F7CC", "0207F8F0",
+                    "02080D20", "02081570", "020816A4", "020817CC", "02081918", "02081DE0", "02081F04", "02082178",
+                    "020A93E4", "020A9674", "020A978C", "020AB830", "020AB958", "020AC61C", "020ACD20", "020AD0D4",
+                    "020AD638", "020AD8B4", "020ADC20", "020AE4B8", "020AE688", "020AEB60", "020B046C", "020B0778",
+                    "020B2018", "020B2138", "020B2370", "020B2484", "020B2664", "020B2A50", "020B2B8C", "020B2CF8",
+                    "020B2E2C", "020B35A0", "020B3704", "020B4BC4", "020B5034", "020B513C", "020B5288", "020B54E0",
+                    "020B630C", "020BBF38", "020BC09C", "020BDFF0", "020BE72C", "020C12EC", "020C1ECC", "020C2194",
+                    "020C318C", "020C35D4", "020C4DC0", "020C7A4C", "020C93C8", "020C94F0", "020CAFC8", "020CD684",
+                    "020CE26C", "020D0094", "020D285C", "020D2E84", "020D2F90", "020D6450", "020D6598", "020DAC74",
+                    "020DADA4", "020DB600", "020DDE6C", "020E0168", "020E02A4", "020E03E8", "020E1F20", "020E2090",
+                    "020E23A4", "020E2ECC", "020E72DC", "020E7404", "020E7534", "020E871C", "020EAD44", "020EAE90",
+                    "020EAFE4", "020EB510", "020ED0E0", "020ED234", "020F0180", "020F02B0", "020FCC24", "021008C0",
+                    "02101B94", "02102410", "02102608", "0210310C", "021032C8", "02103414", "02103568", "021036AC",
+                    "021037D0", "021038D8", "02103A1C", "02103CFC", "021045B0", "02104704", "02104870", "02104A48",
+                    "02104FF4", "02105FF4", "0210612C", "0210626C", "02106784", "02106BB4", "02106D0C", "02106F78",
+                    "021070AC", "021072A4", "021075E8", "02107798", "021078E0", "02107B08", "02107C34", "02107E10",
+                    "021082DC", "021083E0", "02108540", "02108678", "02108788", "02108880", "021089A0", "02108B40",
+                    "02108C8C", "02108DA0", "02108EE8", "02109020", "02109350", "02109584", "0210A0C0", "0210A6E0",
+                    "0210AEE0", "0210B188", "0210B488", "0210B5FC", "0210B774", "0210B878", "0210BB68", "0210BC48",
+                    "0210BDB8", "0210BFB8", "0210C634", "0210D408", "0210D758", "0210E310", "0210F360", "02112F58",
+                    "02113578", "021136A0", "02115298", "02115C00", "02115D48", "02115E88"
+                ]
+            }
+        ]
+    },
+
+    // TADE - Kirby - Mass Attack (USA)
+    // TADP - Kirby - Mass Attack (Europe)
+    // TADJ - Atsumete! Kirby (Japan)
+    // TADK - Moyeora! Kirby (Korea)
+    {
+        "gameCode": "TADE", // Kirby - Mass Attack (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02000CA3", "02000CE5", "02000D1B", "02000D4F", "02000D85", "02000FC3", "02001055", "02001159",
+                    "02001165", "0200116B", "02001301", "02001401", "020014EB", "020015CF", "02001B83", "0200346F",
+                    "0200392D", "0200433F", "0200486D", "02004B21", "02004C63", "02005C99", "0200622D", "02006525",
+                    "02006673", "0200681F", "0200694B", "02006AA9", "02006CCF", "02006E2D", "02006F63", "0200705F",
+                    "0200706D", "0200707D", "02007193", "020071A3", "020071BB", "020071D1", "020071E3", "02007211",
+                    "0200723F", "02007265", "0200728B", "020072B1", "020072D7", "020072FD", "0200734B", "0200735F",
+                    "02007375", "0200738B", "020073B7", "020073CD", "020073FD", "02007413", "02007481", "020074AF",
+                    "020074D5", "02007503", "02007519", "0200752F", "02007545", "02007559", "0200757F", "020075A5",
+                    "020075D3", "020076CB", "02007857", "02007987", "02007AB3", "02007BD9", "02007CCD", "02007DF9",
+                    "02007FF5", "020080E1", "02008465", "02008763", "02008881", "02008947", "020090ED", "020092B1",
+                    "02009BEB", "02009E4B", "0200A0D3", "0200A2F3", "0200A705", "0200A86B", "0200AA67", "0200AEF7",
+                    "0200AFCB", "0200B101", "0200B229", "0200B235", "0200B5A1", "0200B787", "0200B9C5", "0200BB4B",
+                    "0200BCFD", "0200BEB7", "0200F207", "0200F36D", "0200F5BD", "0200FA3F", "0200FB57", "0201020F",
+                    "020103BB", "02010DA5", "020113D3", "02011C97", "02011D83", "02011F17", "020137FB", "02013901",
+                    "02013ACF", "02013C7D", "02013D5D", "02013F67", "02014131", "02014235", "0201444D", "02014785",
+                    "02014875", "02014999", "02014ACF", "02014C6F", "02014E91", "02014FB1", "02015419", "02015565",
+                    "0201566D", "0201577D", "020158A5", "020159B7", "02015AF5", "02015B11", "02015BC7", "02015CCB",
+                    "02015DC9", "02015F2D", "02016263", "0201637F", "020165E5", "02016A2F", "02016B47", "02016C51",
+                    "02016CE5", "02017097", "020171DB", "02017447", "020175CD", "0201798D", "02017E15", "0201806B",
+                    "020181C1", "02018335", "0201844F", "02018531", "02018631", "02018741", "02018D3F", "02018E2B",
+                    "02018F35", "02019035", "02019121", "020191ED", "020192E5", "02019453", "0201961F", "0201973D",
+                    "020198A9", "020199B9", "02019AB3", "02019BCB", "02019D09", "02019DED", "02019EF1", "0201A03B",
+                    "0201A133", "0201A26F", "0201A3D7", "0201A4F7", "0201A603", "0201A78B", "0201ADFD", "0201B0F1",
+                    "0201BAA5", "0201BDD5", "0201BF35", "0201C04B", "0201C163", "0201C3F5", "0201C50B", "0201C635",
+                    "0201C757", "0201C86B", "0201C95D", "0201CA6F", "0201CBB9", "0201CCBD", "0201CE19", "0201CF71",
+                    "0201D053", "0201D135", "0201D633", "0201DB29", "0201DCFD", "0201DF5F", "0201E775", "0201EBF1",
+                    "0201EE6F", "0201F01B", "0201FACD", "0201FCBF", "020203B5", "02020625", "020238DF", "02023BC7",
+                    "0202435D", "02024481", "02024621", "02024711", "02024841", "0202495F", "02024AAF", "02024C01",
+                    "02024CDD", "02024FEB", "02025105", "020252D5", "020253F9", "020254F5", "02025601", "0202596D",
+                    "02025AB1", "02025D31", "02025E0F", "02026035", "0202624B", "02026389", "02026591", "0202669B",
+                    "02026793", "02027547", "0202775D", "0202A65D", "0202A773", "0202AB03", "0202AC6F", "0202AD97",
+                    "0202AEAF", "0202B0D5", "0202B27B", "0202B333", "0202B58B", "0202B725", "0202B9C1", "0202BB45",
+                    "0202BC37", "0202CB99", "0202D4D7", "0202D659", "0202D797", "0202D899", "0202DBD5", "0202DCD5",
+                    "0202DDF1", "0202E00F", "0202E121", "0202E235", "0202E4DF", "0202E6EF", "0202F505", "0202F60D",
+                    "0202F719", "0202F81F", "0202FBA9", "0202FDC7", "0202FE95", "020303C3", "02030579", "0203068D",
+                    "02030805", "02030C07", "0203122F", "020313FB", "0203153D", "02031645", "02031749", "020318B3",
+                    "02031A03", "02031B17", "02031C3B", "0203207B", "020323AB", "020324A1", "02032DBB", "02032EAB",
+                    "020332EF", "020333F5", "02033685", "02033791", "0203387B", "02033961", "02033AA1", "02033C2F",
+                    "02033D67", "02033F41", "02033FEB", "02034337", "020344C1", "02034615", "020347EF", "02034E3F",
+                    "02034FF9", "020350F9", "02035265", "020354BD", "02035541", "020356CB", "0203576F", "02035819",
+                    "02035ACF", "02036485", "02036679", "020367A1", "020368C9", "02037305", "02037479", "020375D3",
+                    "02037793", "02037901", "020379F3", "02037B89", "02037C95", "02037D9F", "02037EBF", "02038629",
+                    "02038D0F", "02038EC5", "02038FDB", "020390FB", "020391E1", "02039369", "020394A5", "020395DF",
+                    "02039911"
+                ]
+            }
+        ]
+    },
+    {
+        "gameCode": "TADP", // Kirby - Mass Attack (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02000CA3", "02000CE5", "02000D1B", "02000D4F", "02000D85", "02000FC3", "02001055", "02001757",
+                    "02001947", "0200322B", "020036BB", "020037E1", "020041F3", "02004721", "020049D5", "02004B17",
+                    "02005B4D", "020060E1", "02006571", "020066D9", "0200687F", "02006997", "02006AC5", "02006BFB",
+                    "02006CF7", "02006D05", "02006D15", "02006E2B", "02006E3B", "02006E53", "02006E69", "02006E7B",
+                    "02006EA9", "02006ED7", "02006EFD", "02006F23", "02006F49", "02006F6F", "02006F95", "02006FE3",
+                    "02006FF7", "0200700D", "02007023", "0200704F", "02007065", "02007095", "020070AB", "02007119",
+                    "02007147", "0200716D", "0200719B", "020071B1", "020071C7", "020071DD", "020071F1", "02007217",
+                    "0200723D", "0200726B", "02007363", "020074EF", "02007663", "02007795", "020079A9", "02008569",
+                    "0200872D", "02008FF1", "0200915F", "020093BF", "02009647", "02009867", "02009C37", "02009D5D",
+                    "02009EC3", "02009FDD", "0200A119", "0200A23B", "0200A6CB", "0200A79F", "0200A8D5", "0200A9FD",
+                    "0200AA09", "0200AD75", "0200AF5B", "0200B199", "0200B31F", "0200B4D1", "0200B68B", "0200E9DB",
+                    "0200EB41", "0200ED91", "0200F1E9", "0200F293", "0200F953", "0200FA79", "0200FB8F", "0200FCDF",
+                    "02010C1B", "020114DF", "02012E83", "02012F89", "02013157", "020134ED", "020135F1", "02013809",
+                    "02013B41", "02013C31", "02013D55", "02013E8B", "0201402B", "0201424D", "0201436D", "020146B9",
+                    "020147E9", "020149B1", "02014AFD", "02014C05", "02014DC5", "02014F0D", "02015153", "0201526F",
+                    "020153E3", "020154ED", "020156E5", "02015B2F", "02015C47", "02015D51", "02015DE5", "02015F4D",
+                    "0201605F", "0201636B", "02016483", "0201658F", "0201669D", "020168CB", "020169DB", "02016AF7",
+                    "02016D17", "02016F0F", "0201700B", "02017331", "020177B9", "020179FB", "02017B07", "02017D19",
+                    "02017DF9", "02017F71", "0201808B", "02018109", "02018209", "02018319", "02018917", "02018A03",
+                    "02018B0D", "02018C0D", "02018CF9", "02018DC5", "02018EB9", "02018ED7", "02018FBF", "020190AB",
+                    "02019277", "02019395", "02019547", "0201966D", "02019785", "02019869", "0201998F", "02019ABB",
+                    "02019BB3", "02019CEF", "02019E3D", "02019F3F", "0201A05F", "0201A16B", "0201A2F3", "0201A965",
+                    "0201AC59", "0201B6A5", "0201B92F", "0201BB8D", "0201BD0B", "0201BE23", "0201C0B5", "0201C1CB",
+                    "0201C2F5", "0201C3F9", "0201C507", "0201C61B", "0201C70D", "0201C817", "0201C92B", "0201CA75",
+                    "0201CBED", "0201CD45", "0201CE27", "0201CF09", "0201D407", "0201DBE7", "0201E421", "0201E525",
+                    "0201E97D", "0201EBCF", "0201EE0B", "0201F8BD", "0201FAAF", "020201A1", "020201AD", "02020241",
+                    "020204B1", "020207FB", "02020805", "020237FB", "02023903", "02023BCB", "02024FD9", "020251E1",
+                    "020252EB", "020253E3", "02028AED", "02028F3F", "0202915D", "020293F7", "02029787", "020298F3",
+                    "02029A0F", "02029AF7", "02029C0F", "02029E35", "02029FDB", "0202A0A9", "0202A3B5", "0202A4D5",
+                    "0202A753", "0202A851", "0202A9D5", "0202AAC7", "0202B0C1", "0202B86D", "0202BC11", "0202C54F",
+                    "0202C6D1", "0202C80F", "0202C911", "0202CC4D", "0202CD45", "0202CE31", "0202D04F", "0202D161",
+                    "0202E22D", "0202E335", "0202E441", "0202E547", "0202E8D1", "0202EAEF", "0202EBBD", "0202F0EB",
+                    "0202F643", "0202FC6B", "0202FDC5", "0202FF0D", "0202FFFF", "02030141", "02030249", "0203034D",
+                    "02030BCF", "02030CC5", "02030E5B", "02031301", "020317C7", "020318B7", "02031CFB", "02031F5F",
+                    "02032191", "020322D1", "020323D9", "02032543", "0203267B", "0203286B", "02032BB7", "02032CFF",
+                    "02032DFB", "02032F21", "020330AF", "02033285", "020333D7", "02033A27", "02033BE1", "02033CE1",
+                    "02033E4D", "020340A5", "02034129", "0203421F", "020342BB", "0203460B", "02034F25", "0203511D",
+                    "02035245", "0203536D", "02035DA9", "02035F1D", "0203617F", "020362ED", "020363DF", "02036575",
+                    "02036681", "020367D1", "02036917", "0203708D", "02037953", "02037A73", "02037B59", "02037CE1",
+                    "02037E1D", "02037F57"
+                ]
+            }
+        ]
+    },
+    {
+        "gameCode": "TADJ", // Atsumete! Kirby (Japan)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02000CA3", "02000CE5", "02000D1B", "02000D4F", "02000D85", "02000FC3", "02001055", "02001763",
+                    "02001953", "020031E7", "020036A5", "020038A9", "020041CF", "020046FD", "020049B1", "02004AF3",
+                    "02005F4D", "020061AB", "02006303", "020064AF", "020065DB", "02006739", "0200695F", "02006A93",
+                    "02006B9D", "02006CD3", "02006DCF", "02006DDD", "02006DED", "02006F03", "02006F13", "02006F2B",
+                    "02006F41", "02006F53", "02006F81", "02006FAF", "02006FD5", "02006FFB", "02007021", "02007047",
+                    "0200706D", "020070BB", "020070CF", "020070E5", "020070FB", "02007127", "0200713D", "0200716D",
+                    "02007183", "020071F1", "0200721F", "02007245", "02007273", "02007289", "0200729F", "020072B5",
+                    "020072C9", "020072EF", "02007315", "02007343", "0200743B", "020075C7", "020076F7", "02007823",
+                    "02007955", "02007B8D", "02007C79", "02007FFD", "020082FB", "02008419", "02008A91", "02008C55",
+                    "02009519", "020097EF", "02009A77", "02009C97", "0200A067", "0200A1A1", "0200A307", "0200A421",
+                    "0200A55B", "0200A6FF", "0200AB8F", "0200AC63", "0200AD99", "0200AEA1", "0200B1B5", "0200B373",
+                    "0200B415", "0200B5FB", "0200B839", "0200B9BF", "0200BB71", "0200BD2B", "0200F1BF", "0200F325",
+                    "0200F9AF", "0200FEFB", "0201013F", "020105CD", "020109CD", "02010C47", "02010D2F", "020110B9",
+                    "0201154F", "02011CC5", "02011FE3", "02012341", "02013A6B", "02013B71", "02013D3F", "02013EED",
+                    "02013FCD", "020141D7", "020143A1", "020144A5", "020146BD", "020149F5", "02014AE5", "02014C09",
+                    "02014D3F", "02014EDF", "020151E5", "0201541D", "02015625", "02015771", "02015879", "02015C5F",
+                    "02015D7B", "02015E7B", "02015FE5", "020161DD", "020162F9", "02016779", "0201680D", "02016975",
+                    "02016A87", "02016C4D", "02016D4D", "02016F53", "0201706D", "02017155", "020173AB", "02017531",
+                    "020178F1", "02017D79", "02017FBB", "020180C7", "020182DB", "020183E3", "0201854D", "02018667",
+                    "020186E5", "020187E5", "020188F5", "02018A77", "02018FD7", "020190C3", "020191CD", "020192CD",
+                    "020193B9", "02019485", "02019579", "02019597", "0201967F", "0201976B", "0201985B", "02019977",
+                    "02019B25", "02019C91", "02019DD3", "02019EF9", "0201A011", "0201A0F5", "0201A21B", "0201A347",
+                    "0201A43F", "0201A57B", "0201A6E3", "0201A803", "0201A90F", "0201AA97", "0201AB75", "0201B1E9",
+                    "0201B4DD", "0201B7A1", "0201BA27", "0201C001", "0201C331", "0201C475", "0201C639", "0201C7E1",
+                    "0201C8F7", "0201CA21", "0201CB25", "0201CC33", "0201CD47", "0201CE39", "0201CF4B", "0201D0E9",
+                    "0201D241", "0201D323", "0201D405", "0201D903", "0201DC23", "0201DEED", "0201E0C1", "0201E323",
+                    "0201E449", "0201E591", "0201ECC9", "0201EDCD", "0201FEB1", "0201FF51", "02020197", "02020999",
+                    "020209A5", "02020A39", "02020EDF", "02020EE9", "02023EDF", "02023FE7", "020242AF", "02024921",
+                    "02024A8D", "020258D5", "02025ADD", "02025BE7", "02025CDF", "020294E5", "02029811", "02029CB1",
+                    "02029E51", "0202A333", "0202A4B9", "0202A5F7", "0202A70F", "0202A84B", "0202AA2D", "0202ABD3",
+                    "0202ACA1", "0202AE39", "0202B095", "0202B1B5", "0202B9FD", "0202BB8B", "0202C191", "0202C3CD",
+                    "0202C4A3", "0202C6C1", "0202CFFF", "0202D181", "0202D2BF", "0202D3C1", "0202D6FD", "0202D7FD",
+                    "0202D8F5", "0202D9E1", "0202DB2D", "0202DCEB", "0202DDFD", "0202DF11", "0202EFB5", "0202F0BD",
+                    "0202F1C9", "0202F2CF", "0202F659", "0202F877", "0202F957", "0202FE6F", "02030025", "02030139",
+                    "020302B1", "020306BF", "020307C7", "02030989", "02030B35", "02030FDF", "02031111", "0203129B",
+                    "020313D7", "02031471", "02031575", "02031CE9", "02031E8F", "02031F85", "0203254B", "02032E63",
+                    "020330AD", "020331A3", "020332E9", "02033409", "020335A9", "020336B5", "0203379F", "02033885",
+                    "02033981", "02033AC5", "02033C53", "02033D8B", "02034227", "02034323", "02034439", "02034667",
+                    "02034A7D", "02034BEB", "02034EBF", "02034FCB", "02035101", "0203525D", "0203535D", "020354C9",
+                    "02035721", "02035A2B", "02035DF7", "02036421", "02036619", "02036741", "02036869", "020372A5",
+                    "02037419", "02037573", "02037733", "020378A1", "02037993", "02037B29", "02037C35", "02037D3F",
+                    "02037E5F", "020385C5", "02038EBB", "02038FDD", "02039165", "020392E7"
+                ]
+            }
+        ]
+    },
+    {
+        "gameCode": "TADK", // Moyeora! Kirby (Korea)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "metafortress",
+                "addresses": [
+                    "02000CA3", "02000CE5", "02000D1B", "02000D4F", "02000D85", "02000FC3", "02001055", "02001145",
+                    "0200136D", "0200146D", "02001557", "0200163B", "02001BEF", "02001DDF", "020036C3", "02003B81",
+                    "02003D85", "020046AB", "02004BD9", "02004E8D", "02004FCF", "02006005", "02006599", "020067F7",
+                    "020068FB", "02006A47", "02006B03", "02006C95", "02006DCB", "02006EF7", "02007055", "020071BD",
+                    "02007363", "0200747B", "0200757F", "02007689", "020077BF", "020078BB", "020078C9", "020078D9",
+                    "020079EF", "020079FF", "02007A17", "02007A2D", "02007A3F", "02007A6D", "02007A9B", "02007AC1",
+                    "02007AE7", "02007B0D", "02007B33", "02007B59", "02007BA7", "02007BBB", "02007BD1", "02007BE7",
+                    "02007C13", "02007C29", "02007C59", "02007C6F", "02007CDD", "02007D0B", "02007D31", "02007D5F",
+                    "02007D75", "02007D8B", "02007DA1", "02007DB5", "02007DDB", "02007E01", "02007E2F", "02007F27",
+                    "020080B3", "020081E3", "0200830F", "02008441", "02008679", "02008765", "02008A55", "02008B73",
+                    "02008C85", "02008F83", "020090A1", "02009719", "020098D9", "0200A19D", "0200A30B", "0200A56B",
+                    "0200A7F3", "0200AA13", "0200ADDF", "0200AF05", "0200B06B", "0200B185", "0200B2C1", "0200B3E3",
+                    "0200B873", "0200B947", "0200BA7D", "0200BBA5", "0200BBB1", "0200BF1D", "0200C103", "0200C341",
+                    "0200C4C7", "0200C679", "0200C833", "0200FB83", "0200FCE9", "020102B9", "02010363", "02010A23",
+                    "02010B49", "02010C5F", "02010DAF", "020119FF", "02011DD3", "020123EB", "02012777", "02012863",
+                    "020129F7", "0201429B", "020143A1", "0201456F", "0201471D", "0201489D", "02014AB7", "02014C81",
+                    "02014D85", "02014F9D", "020152D5", "020153C5", "020154E9", "0201561F", "020157BF", "02015C75",
+                    "02015DA5", "02015F6D", "020160B9", "020161C1", "02016381", "020164C9", "020167FF", "0201691B",
+                    "02016A95", "02016C8D", "020170D7", "020171EF", "020172F9", "0201738D", "020174F5", "02017607",
+                    "020179BD", "02017AD7", "02017C25", "02017E7B", "02018005", "020183C9", "02018851", "02018A93",
+                    "02018B9F", "02018D45", "02018DE3", "02018F51", "0201906B", "020190E9", "020191E9", "020192F9",
+                    "020198F7", "020199E3", "02019AED", "02019BED", "02019CD9", "02019DA5", "02019E99", "02019EB7",
+                    "02019F9F", "0201A08B", "0201A17B", "0201A337", "0201A455", "0201A5C1", "0201A703", "0201A829",
+                    "0201A941", "0201AA25", "0201AB4B", "0201AC77", "0201AD6F", "0201AEAB", "0201AFF9", "0201B0FB",
+                    "0201B21B", "0201B327", "0201B4AF", "0201B58D", "0201B8ED", "0201BB5D", "0201BF01", "0201C1F5",
+                    "0201CBA9", "0201CE33", "0201D091", "0201D1D5", "0201D2FB", "0201D479", "0201D621", "0201D737",
+                    "0201D861", "0201D965", "0201DA73", "0201DB87", "0201DC79", "0201DE1B", "0201DF6D", "0201E0E5",
+                    "0201E23D", "0201E31F", "0201E401", "0201E8FF", "0201EDED", "0201EFC1", "0201F223", "0201FA8D",
+                    "020245E7", "020246EF", "020249B7", "02025DAD", "02025EA1", "02025FB1", "020260BB", "020261B3",
+                    "020298B1", "02029E59", "0202A0F1", "0202A207", "0202A597", "0202A703", "0202A82B", "0202AA79",
+                    "0202AC1F", "0202AED1", "0202AFF1", "0202B839", "0202B9C7", "0202C0A9", "0202C1E9", "0202C2BF",
+                    "0202C4DD", "0202CE1B", "0202CF9F", "0202D0E3", "0202D1E5", "0202D521", "0202D621", "0202D719",
+                    "0202D805", "0202DA23", "0202DB35", "0202DC49", "0202DEF3", "0202E103", "0202EF11", "0202F019",
+                    "0202F125", "0202F22B", "0202F5B5", "0202F7D3", "0202F8A1", "0202FDCF", "0202FF85", "02030099",
+                    "02030211", "02030613", "02030C3B", "02030E07", "02030F43", "02030FDD", "020310E1", "020318F7",
+                    "020319ED", "02031B83", "02031FC3", "02032121", "020329CB", "02032C15", "02032E3D", "02032F49",
+                    "02033033", "02033119", "02033215", "02033359", "020334E7", "0203361F", "020337F9", "02033B07",
+                    "02033C4F", "02033D4B", "02033E61", "02033F87", "0203415D", "020342AF", "020348F7", "02034AB1",
+                    "02034BB1", "02034D1D", "02034F75", "0203527F", "02035B99", "02035D91", "02035EB9", "02035FE1",
+                    "02036A19", "02036B15", "02036C1F", "02036D8F", "02036EE3", "020370BB", "02037229", "0203731B",
+                    "020374B1", "020375BD", "020376C7", "020377E7", "02037F5D", "02038647", "02038823", "02038943",
+                    "02038A29", "02038BB1", "02038CED", "02038E27"
+                ]
+            }
+        ]
+    }
+]

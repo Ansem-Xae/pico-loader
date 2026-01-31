@@ -50,3 +50,4 @@ picoLoader*.bin
 .vscode/
 data/aplist.bin
 data/savelist.bin
+data/patchlist.bin

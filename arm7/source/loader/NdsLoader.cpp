@@ -26,9 +26,11 @@
 #include "TwlAes.h"
 #include "DSMode.h"
 #include "Arm7IoRegisterClearer.h"
+#include "PatchListFactory.h"
 #include "NdsLoader.h"
 
 #define AP_LIST_PATH      "/_pico/aplist.bin"
+#define PATCH_LIST_PATH   "/_pico/patchlist.bin"
 #define BIOS_NDS7_PATH    "/_pico/biosnds7.rom"
 
 typedef void (*entrypoint_t)(void);
@@ -290,6 +292,8 @@ void NdsLoader::Load(BootMode bootMode)
         // wait for arm9 patches to be ready
         receiveFromArm9();
 
+        HandleGameSpecificPatches();
+
         LOG_DEBUG("Arm9 patches done\n");
 
         ApplyArm7Patches();
@@ -436,6 +440,63 @@ void NdsLoader::InsertArgv()
     HOMEBREW_ARGV->magic = HOMEBREW_ARGV_MAGIC;
     HOMEBREW_ARGV->commandLine = (char*)argDst;
     HOMEBREW_ARGV->length = argSize;
+}
+
+void NdsLoader::HandleGameSpecificPatches()
+{
+    auto patchList = PatchListFactory().CreateFromFile(PATCH_LIST_PATH);
+    if (patchList)
+    {
+        auto entry = patchList->FindEntry(_romHeader.gameCode, _romHeader.softwareVersion);
+        if (entry)
+        {
+            auto patch = &entry->firstPatch;
+            for (int patchIndex = 0; patchIndex < entry->patchCount; patchIndex++)
+            {
+                switch (patch->common.patchType)
+                {
+                    case PatchListPatchType::Replace:
+                    {
+                        LOG_DEBUG("Applying replace patch. %d bytes to 0x%08X\n",
+                            patch->replacePatch.dataLength, patch->replacePatch.address);
+                        memcpy((void*)patch->replacePatch.address, patch->replacePatch.data, patch->replacePatch.dataLength);
+                        patch = (const PatchListEntryPatch*)&patch->replacePatch.data[(patch->replacePatch.dataLength + 3) & ~3];
+                        break;
+                    }
+                    case PatchListPatchType::Metafortress:
+                    {
+                        LOG_DEBUG("Applying Metafortress patch. %d addresses\n", patch->metafortressPatch.addressCount);
+                        auto addresses = patch->metafortressPatch.addresses;
+                        for (uint32_t addressIndex = 0; addressIndex < patch->metafortressPatch.addressCount; addressIndex++)
+                        {
+                            uint32_t address = addresses[addressIndex];
+                            if ((address & 1) != 0)
+                            {
+                                // thumb
+                                *(u16*)(address & ~1) = 0x4280; // cmp r0, r0
+                            }
+                            else
+                            {
+                                // arm
+                                *(u32*)address = 0xE1500000; // cmp r0, r0
+                            }
+                        }
+                        patch = (const PatchListEntryPatch*)&addresses[patch->metafortressPatch.addressCount];
+                        break;
+                    }
+                    default:
+                    {
+                        LOG_ERROR("Unknown patch type\n");
+                        return;
+                    }
+                }
+            }
+        }
+        else
+        {
+            LOG_DEBUG("No entry found in patch list\n");
+        }
+    }
 }
 
 void NdsLoader::HandleHomebrewPatching()
@@ -660,8 +721,6 @@ void NdsLoader::HandleAntiPiracy()
         {
             LOG_DEBUG("No entry found in ap list\n");
         }
-
-        delete apList;
     }
 }
 
