@@ -196,7 +196,7 @@
     // BDEJ - Tozasareta Byoutou - Dementium II (Japan)
     //
     // These games have homebrew AP that issues manual commands to the slot-1 SPI bus to probe the EEPROM chip.
-    // The patch overwrites the result of the test as it is stored into a context struct.
+    // The patch overwrites the result of the AP test as it is stored into a context struct.
     {
         "gameCode": "BDEE", // Dementium II (USA)
         "gameVersion": 0,
@@ -271,10 +271,96 @@
         ]
     },
 
+    // CLWE - Star Wars - The Clone Wars - Jedi Alliance (USA)
+    // CLWP - Star Wars - The Clone Wars - Jedi Alliance (Europe)
+    //
+    // These games have an issue where if a vblank interrupt occurs at the wrong moment, it can interrupt a function that is
+    // using a global struct and then modify that struct, which causes the game to softlock when the vblank handler returns.
+    // This is claimed to be due to a circular buffer used for texture loading. The patch rewrites the function to use a vblank wait.
+    {
+        "gameCode": "CLWE", // Star Wars - The Clone Wars - Jedi Alliance (USA)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "0205653C",
+                "data": "03 00 58 6F 01 38 08 D0 05 DF 58 6F 01 38 04 D0 90 20 18 58 01 28 00 D0",
+            }
+        ]
+    },
+    {
+        "gameCode": "CLWP", // Star Wars - The Clone Wars - Jedi Alliance (Europe)
+        "gameVersion": 0,
+        "patches": [
+            {
+                "type": "replace",
+                "address": "0205653C",
+                "data": "03 00 58 6F 01 38 08 D0 05 DF 58 6F 01 38 04 D0 90 20 18 58 01 28 00 D0",
+            }
+        ]
+    },
+
+    // MetaFortress games below here.
+    //
+    // MetaFortress is an automated system that replaces the typical way DS games are built. It automatically injects
+    // code inside developer-written game functions that conducts checksums on other functions, including SDK functions
+    // and also other game functions that previously were modified with injected checksum calculations.
+    // The checksums themselves are randomized: the way they load pointers, access data, update the checksum state,
+    // perform a checksum finalization, and compare the calculated result to the expected result, as well as what happens
+    // if the checksum fails, are all subject to a high degree of randomization that makes automated static analysis
+    // difficult or impossible.
+    //
+    // This is in stark contrast to DS Protect, which had no per-game randomization (except for The Legend of Zelda: Spirit Tracks)
+    // and required each invokation and response behavior be manually programmed in.
+    //
+    // For example, a basic game function like this:
+    //
+    // void gameFunc(...)
+    // {
+    //     /* Game func stuff */
+    // }
+    //
+    // May be transformed into something like this:
+    //
+    // void modifiedGameFunc(...)
+    // {
+    //     u16* start = ((u16*)0x02013458) + 0x200;   /* Some target range, +random offset */
+    //     u16* end = ((u16*)0x020140B0) + 0x200;
+    //     u32 checksum = 0;
+    //     do
+    //     {
+    //         checksum ^= start[-0x200];             /* Load from inverse offset, add to checksum */
+    //         checksum *= 113041;                    /* Update checksum, random operation */
+    //     }
+    //     while (++start != end);
+    //     checksum ^= checksum >> 7;                 /* Finalize checksum, random procedure */
+    //     checksum += checksum << 2;
+    //     checksum ^= checksum >> 13;
+    //     checksum += checksum << 5;
+    //     if (checksum == 0xFBD4230)                 /* Compare checksum, correct value is often loaded off the stack */
+    //     {
+    //         /* Game func stuff */                  /* Normal game procedure */
+    //     }
+    //     else
+    //     {
+    //         /* Game crash */                       /* Crash somehow, randomized assembly(?) */
+    //     }
+    // }
+    //
+    // The game crash itself is heavily randomized, often assembling an address with obfuscated arithmetic
+    // and then branching to it, sometimes jumping multiple times before eventually entering an infinite loop.
+    //
+    // MetaFortress games typically do this to approximately 200 game functions. Some have 100 or fewer checksums, while others
+    // have over 300. The number of functions to modify, as well as performance-critical functions to avoid modifying, were
+    // controllable by the game developers.
+    //
+    // However, only 8 games, 18 if you count regional releases, utilize MetaFortress. The majority of them are Ubisoft games.
+    //
+    // To patch MetaFortress, the comparisons between calculated checksums and expected checksums are replaced with "cmp r0, r0".
+    // The list of addresses below are where these compares occur (if Thumb, +1 to the address).
+
     // BDUE - C.O.P. - The Recruit (USA)
     // BDUP - C.O.P. - The Recruit (Europe)
-    //
-    // These games have MetaFortress.
     {
         "gameCode": "BDUE", // BDUE - C.O.P. - The Recruit (USA)
         "gameVersion": 0,
@@ -332,8 +418,6 @@
 
     // C7UE - Battle of Giants - Dragons (USA) (Rev 1)
     // C7UP - Combat of Giants - Dragons (Europe)
-    //
-    // These games have MetaFortress.
     {
         "gameCode": "C7UE", // Battle of Giants - Dragons (USA) (Rev 1)
         "gameVersion": 1,
@@ -381,8 +465,6 @@
 
     // BIGE - Battle of Giants - Mutant Insects (USA)
     // BIGP - Combat of Giants - Mutant Insects (Europe)
-    //
-    // These games have MetaFortress.
     {
         "gameCode": "BIGE", // Battle of Giants - Mutant Insects (USA)
         "gameVersion": 0,
@@ -454,8 +536,6 @@
 
     // BQNE - Captain America - Super Soldier (USA)
     // BQNP - Captain America - Super Soldier (Europe)
-    //
-    // These games have MetaFortress.
     {
         "gameCode": "BQNE", // Captain America - Super Soldier (USA)
         "gameVersion": 0,
@@ -529,8 +609,6 @@
 
     // VIDE - Imagine - Resort Owner (USA) (NDSi Enhanced)
     // VIDV - Imagine - Dream Resort (Europe) (NDSi Enhanced)
-    //
-    // These games have MetaFortress.
     {
         "gameCode": "VIDE", // Imagine - Resort Owner (USA) (NDSi Enhanced)
         "gameVersion": 0,
@@ -620,8 +698,6 @@
 
     // CHNE - Might & Magic - Clash of Heroes (USA)
     // CHNP - Might & Magic - Clash of Heroes (Europe)
-    //
-    // These games have MetaFortress.
     {
         "gameCode": "CHNE", // Might & Magic - Clash of Heroes (USA)
         "gameVersion": 0,
@@ -737,8 +813,6 @@
 
     // VPPE - Prince of Persia - The Forgotten Sands (USA) (NDSi Enhanced)
     // VPPV - Prince of Persia - The Forgotten Sands (Europe) (NDSi Enhanced)
-    //
-    // These games have MetaFortress.
     {
         "gameCode": "VPPE", // Prince of Persia - The Forgotten Sands (USA) (NDSi Enhanced)
         "gameVersion": 0,
@@ -852,8 +926,6 @@
     // TADP - Kirby - Mass Attack (Europe)
     // TADJ - Atsumete! Kirby (Japan)
     // TADK - Moyeora! Kirby (Korea)
-    //
-    // These games have MetaFortress.
     {
         "gameCode": "TADE", // Kirby - Mass Attack (USA)
         "gameVersion": 0,
