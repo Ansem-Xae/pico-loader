@@ -1,5 +1,6 @@
 #include "common.h"
 #include "ModuleParamsLocator.h"
+#include "AutoloadAdjuster.h"
 #include "SdkVersion.h"
 #include "patches/PatchCollection.h"
 #include "patches/PatchContext.h"
@@ -54,6 +55,8 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
     u32 arm9Size = romHeader->arm9Size;
     u32 arm9iSize = romHeader->SupportsDsiMode() ? twlRomHeader->arm9iSize : 0;
     u32 compressedEnd = 0;
+    std::unique_ptr<IAutoloadAdjuster> arm9Autoload;
+    std::unique_ptr<IAutoloadAdjuster> arm9iAutoload;
     auto moduleParams = ModuleParamsLocator().FindModuleParams(romHeader);
     SdkVersion sdkVersion = moduleParams ? moduleParams->sdkVersion : 0u;
     if (moduleParams)
@@ -77,25 +80,46 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
             }
         }
 
+        if (sdkVersion.IsTwlSdk())
+        {
+            arm9Autoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_sdk5_t>>(
+                (autoload_list_entry_sdk5_t*)moduleParams->autoloadListStart,
+                (autoload_list_entry_sdk5_t*)moduleParams->autoloadListEnd,
+                moduleParams->autoloadStart);
+        }
+        else
+        {
+            arm9Autoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_t>>(
+                (autoload_list_entry_t*)moduleParams->autoloadListStart,
+                (autoload_list_entry_t*)moduleParams->autoloadListEnd,
+                moduleParams->autoloadStart);
+        }
+
         if (gIsDsiMode && romHeader->SupportsDsiMode())
         {
             auto arm9iModuleParams = (module_params_twl_t*)(romHeader->arm9LoadAddress + twlRomHeader->arm9iModuleParamsAddress);
             if (arm9iModuleParams->magicBigEndian == MODULE_PARAMS_TWL_MAGIC_BE &&
-                arm9iModuleParams->magicLittleEndian == MODULE_PARAMS_TWL_MAGIC_LE &&
-                arm9iModuleParams->compressedEnd != 0)
+                arm9iModuleParams->magicLittleEndian == MODULE_PARAMS_TWL_MAGIC_LE)
             {
-                LOG_DEBUG("Compressed arm9i found\n");
-                if (miiUncompressBackward)
+                if (arm9iModuleParams->compressedEnd != 0)
                 {
-                    arm9iSize = arm9iModuleParams->compressedEnd + *(u32*)(arm9iModuleParams->compressedEnd - 4) - twlRomHeader->arm9iLoadAddress;
-                    ((uncompress_func_t)miiUncompressBackward)((void*)arm9iModuleParams->compressedEnd);
-                    arm9iModuleParams->compressedEnd = 0;
-                    LOG_DEBUG("Decompressed arm9i\n");
+                    LOG_DEBUG("Compressed arm9i found\n");
+                    if (miiUncompressBackward)
+                    {
+                        arm9iSize = arm9iModuleParams->compressedEnd + *(u32*)(arm9iModuleParams->compressedEnd - 4) - twlRomHeader->arm9iLoadAddress;
+                        ((uncompress_func_t)miiUncompressBackward)((void*)arm9iModuleParams->compressedEnd);
+                        arm9iModuleParams->compressedEnd = 0;
+                        LOG_DEBUG("Decompressed arm9i\n");
+                    }
+                    else
+                    {
+                        LOG_DEBUG("Could not decompress arm9i\n");
+                    }
                 }
-                else
-                {
-                    LOG_DEBUG("Could not decompress arm9i\n");
-                }
+                arm9iAutoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_sdk5_t>>(
+                    (autoload_list_entry_sdk5_t*)arm9iModuleParams->autoloadListStart,
+                    (autoload_list_entry_sdk5_t*)arm9iModuleParams->autoloadListEnd,
+                    arm9iModuleParams->autoloadStart);
             }
         }
     }
@@ -106,6 +130,10 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
         {
             // Spider-Man 2 (USA) is probably the only game without module params
             sdkVersion = 0x02004F50;
+            arm9Autoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_t>>(
+                (autoload_list_entry_t*)0x0215DBA0,
+                (autoload_list_entry_t*)0x0215DBB8,
+                0x02157CC0);
         }
     }
     LOG_DEBUG("Arm9 region: 0x%x - 0x%x\n", romHeader->arm9LoadAddress, romHeader->arm9LoadAddress + arm9Size);
@@ -113,8 +141,10 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
     {
         (void*)romHeader->arm9LoadAddress,
         arm9Size,
+        std::move(arm9Autoload),
         romHeader->SupportsDsiMode() ? (void*)twlRomHeader->arm9iLoadAddress : nullptr,
         arm9iSize,
+        std::move(arm9iAutoload),
         sdkVersion,
         romHeader->gameCode,
         romHeader->softwareVersion,
