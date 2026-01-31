@@ -5,8 +5,8 @@
 .global jumpToArm9EntryPoint
 .type jumpToArm9EntryPoint, %function
 jumpToArm9EntryPoint:
-    str r0, entry_point
-    // Clear all registers
+    push {r0}
+    // Clear all registers, except for sp
     mov r0, #0
     mov r1, #0
     mov r2, #0
@@ -20,10 +20,6 @@ jumpToArm9EntryPoint:
     mov r10, #0
     mov r11, #0
     mov r12, #0
-    mov sp, #0
     mov lr, #0
     // Jump to the arm9 entry point
-    ldr pc, entry_point
-
-entry_point:
-    .word 0
+    pop {pc}
