@@ -78,8 +78,7 @@ const u16* SecureSysCallsUnusedSpaceLocator::FindPattern(const u16* data, u32 le
 
 void SecureSysCallsUnusedSpaceLocator::FindUnusedSpace(const nds_header_ntr_t* romHeader, PatchHeap& patchHeap) const
 {
-    if (romHeader->arm9RomOffset != 0x4000)
-        return;
+    // NOTE: We can not check if arm9RomOffset == 0x4000, because some rom hacks repack the rom in unusual ways.
 
     u32 secureStart = romHeader->arm9LoadAddress;
 
@@ -88,6 +87,12 @@ void SecureSysCallsUnusedSpaceLocator::FindUnusedSpace(const nds_header_ntr_t* r
         // secure area for development purposes has this area empty
         patchHeap.AddFreeSpace((void*)secureStart, 0x800);
         LOG_DEBUG("Added free space starting at 0x%x with size 0x%x\n", secureStart, 0x800);
+        return;
+    }
+
+    if (((u32*)secureStart)[0] != 0xE7FFDEFF || ((u32*)secureStart)[1] != 0xE7FFDEFF)
+    {
+        LOG_ERROR("No secure area space found\n");
         return;
     }
 

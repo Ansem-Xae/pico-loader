@@ -57,83 +57,88 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
     u32 compressedEnd = 0;
     std::unique_ptr<IAutoloadAdjuster> arm9Autoload;
     std::unique_ptr<IAutoloadAdjuster> arm9iAutoload;
-    auto moduleParams = ModuleParamsLocator().FindModuleParams(romHeader);
-    SdkVersion sdkVersion = moduleParams ? moduleParams->sdkVersion : 0u;
-    if (moduleParams)
+    module_params_ntr_t* moduleParams = nullptr;
+    SdkVersion sdkVersion = 0u;
+    if (romHeader->gameCode == GAMECODE("AS2E"))
     {
-        LOG_DEBUG("Module params found at 0x%p\n", moduleParams);
-        LOG_DEBUG("Sdk version: 0x%x\n", moduleParams->sdkVersion);
-        const u32* miiUncompressBackward = nullptr;
-        if (moduleParams->compressedEnd)
-        {
-            miiUncompressBackward = FindMIiUncompressBackward(romHeader->arm9LoadAddress, sdkVersion);
-            if (miiUncompressBackward)
-            {
-                arm9Size = moduleParams->compressedEnd + *(u32*)(moduleParams->compressedEnd - 4) - romHeader->arm9LoadAddress;
-                ((uncompress_func_t)miiUncompressBackward)((void*)moduleParams->compressedEnd);
-                compressedEnd = moduleParams->compressedEnd;
-                moduleParams->compressedEnd = 0;
-            }
-            else
-            {
-                LOG_DEBUG("MIi_UncompressBackward not found\n");
-            }
-        }
-
-        if (sdkVersion.IsTwlSdk())
-        {
-            arm9Autoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_sdk5_t>>(
-                (autoload_list_entry_sdk5_t*)moduleParams->autoloadListStart,
-                (autoload_list_entry_sdk5_t*)moduleParams->autoloadListEnd,
-                moduleParams->autoloadStart);
-        }
-        else
-        {
-            arm9Autoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_t>>(
-                (autoload_list_entry_t*)moduleParams->autoloadListStart,
-                (autoload_list_entry_t*)moduleParams->autoloadListEnd,
-                moduleParams->autoloadStart);
-        }
-
-        if (gIsDsiMode && romHeader->SupportsDsiMode())
-        {
-            auto arm9iModuleParams = (module_params_twl_t*)(romHeader->arm9LoadAddress + twlRomHeader->arm9iModuleParamsAddress);
-            if (arm9iModuleParams->magicBigEndian == MODULE_PARAMS_TWL_MAGIC_BE &&
-                arm9iModuleParams->magicLittleEndian == MODULE_PARAMS_TWL_MAGIC_LE)
-            {
-                if (arm9iModuleParams->compressedEnd != 0)
-                {
-                    LOG_DEBUG("Compressed arm9i found\n");
-                    if (miiUncompressBackward)
-                    {
-                        arm9iSize = arm9iModuleParams->compressedEnd + *(u32*)(arm9iModuleParams->compressedEnd - 4) - twlRomHeader->arm9iLoadAddress;
-                        ((uncompress_func_t)miiUncompressBackward)((void*)arm9iModuleParams->compressedEnd);
-                        arm9iModuleParams->compressedEnd = 0;
-                        LOG_DEBUG("Decompressed arm9i\n");
-                    }
-                    else
-                    {
-                        LOG_DEBUG("Could not decompress arm9i\n");
-                    }
-                }
-                arm9iAutoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_sdk5_t>>(
-                    (autoload_list_entry_sdk5_t*)arm9iModuleParams->autoloadListStart,
-                    (autoload_list_entry_sdk5_t*)arm9iModuleParams->autoloadListEnd,
-                    arm9iModuleParams->autoloadStart);
-            }
-        }
+        // Spider-Man 2 (USA) is probably the only game without module params
+        sdkVersion = 0x02004F50;
+        arm9Autoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_t>>(
+            (autoload_list_entry_t*)0x0215DBA0,
+            (autoload_list_entry_t*)0x0215DBB8,
+            0x02157CC0);
     }
     else
     {
-        LOG_DEBUG("Module params not found!\n");
-        if (romHeader->gameCode == GAMECODE("AS2E"))
+        moduleParams = ModuleParamsLocator().FindModuleParams(romHeader);
+        if (moduleParams)
         {
-            // Spider-Man 2 (USA) is probably the only game without module params
-            sdkVersion = 0x02004F50;
-            arm9Autoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_t>>(
-                (autoload_list_entry_t*)0x0215DBA0,
-                (autoload_list_entry_t*)0x0215DBB8,
-                0x02157CC0);
+            LOG_DEBUG("Module params found at 0x%p\n", moduleParams);
+            sdkVersion = moduleParams->sdkVersion;
+            LOG_DEBUG("Sdk version: 0x%x\n", sdkVersion);
+            const u32* miiUncompressBackward = nullptr;
+            if (moduleParams->compressedEnd)
+            {
+                miiUncompressBackward = FindMIiUncompressBackward(romHeader->arm9LoadAddress, sdkVersion);
+                if (miiUncompressBackward)
+                {
+                    arm9Size = moduleParams->compressedEnd + *(u32*)(moduleParams->compressedEnd - 4) - romHeader->arm9LoadAddress;
+                    ((uncompress_func_t)miiUncompressBackward)((void*)moduleParams->compressedEnd);
+                    compressedEnd = moduleParams->compressedEnd;
+                    moduleParams->compressedEnd = 0;
+                }
+                else
+                {
+                    LOG_ERROR("MIi_UncompressBackward not found\n");
+                }
+            }
+
+            if (sdkVersion.IsTwlSdk())
+            {
+                arm9Autoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_sdk5_t>>(
+                    (autoload_list_entry_sdk5_t*)moduleParams->autoloadListStart,
+                    (autoload_list_entry_sdk5_t*)moduleParams->autoloadListEnd,
+                    moduleParams->autoloadStart);
+            }
+            else
+            {
+                arm9Autoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_t>>(
+                    (autoload_list_entry_t*)moduleParams->autoloadListStart,
+                    (autoload_list_entry_t*)moduleParams->autoloadListEnd,
+                    moduleParams->autoloadStart);
+            }
+
+            if (gIsDsiMode && romHeader->SupportsDsiMode())
+            {
+                auto arm9iModuleParams = (module_params_twl_t*)(romHeader->arm9LoadAddress + twlRomHeader->arm9iModuleParamsAddress);
+                if (arm9iModuleParams->magicBigEndian == MODULE_PARAMS_TWL_MAGIC_BE &&
+                    arm9iModuleParams->magicLittleEndian == MODULE_PARAMS_TWL_MAGIC_LE)
+                {
+                    if (arm9iModuleParams->compressedEnd != 0)
+                    {
+                        LOG_DEBUG("Compressed arm9i found\n");
+                        if (miiUncompressBackward)
+                        {
+                            arm9iSize = arm9iModuleParams->compressedEnd + *(u32*)(arm9iModuleParams->compressedEnd - 4) - twlRomHeader->arm9iLoadAddress;
+                            ((uncompress_func_t)miiUncompressBackward)((void*)arm9iModuleParams->compressedEnd);
+                            arm9iModuleParams->compressedEnd = 0;
+                            LOG_DEBUG("Decompressed arm9i\n");
+                        }
+                        else
+                        {
+                            LOG_ERROR("Could not decompress arm9i\n");
+                        }
+                    }
+                    arm9iAutoload = std::make_unique<AutoloadAdjuster<autoload_list_entry_sdk5_t>>(
+                        (autoload_list_entry_sdk5_t*)arm9iModuleParams->autoloadListStart,
+                        (autoload_list_entry_sdk5_t*)arm9iModuleParams->autoloadListEnd,
+                        arm9iModuleParams->autoloadStart);
+                }
+            }
+        }
+        else
+        {
+            LOG_ERROR("Module params not found!\n");
         }
     }
     LOG_DEBUG("Arm9 region: 0x%x - 0x%x\n", romHeader->arm9LoadAddress, romHeader->arm9LoadAddress + arm9Size);
