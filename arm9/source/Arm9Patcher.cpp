@@ -82,8 +82,17 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
                 miiUncompressBackward = FindMIiUncompressBackward(romHeader->arm9LoadAddress, sdkVersion);
                 if (miiUncompressBackward)
                 {
-                    arm9Size = moduleParams->compressedEnd + *(u32*)(moduleParams->compressedEnd - 4) - romHeader->arm9LoadAddress;
-                    ((uncompress_func_t)miiUncompressBackward)((void*)moduleParams->compressedEnd);
+                    u32 originalBottom = *(u32*)(moduleParams->compressedEnd - 4);
+                    // Some rom hacks decompress the arm9, but don't set compressedEnd to 0.
+                    if (originalBottom < 4 * 1024 * 1024)
+                    {
+                        arm9Size = moduleParams->compressedEnd + originalBottom - romHeader->arm9LoadAddress;
+                        ((uncompress_func_t)miiUncompressBackward)((void*)moduleParams->compressedEnd);
+                    }
+                    else
+                    {
+                        LOG_WARNING("Invalid originalBottom value found. Skipping arm9 decompression.\n");
+                    }
                     compressedEnd = moduleParams->compressedEnd;
                     moduleParams->compressedEnd = 0;
                 }
