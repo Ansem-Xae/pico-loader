@@ -2,16 +2,19 @@
 Pico Loader is a homebrew and retail DS(i) rom loader supporting a variety of platforms (see below).
 
 ## Features
-- Supports both homebrew and retail DS(i) roms
-- Supports DSiWare and redirects NAND to the flashcard SD card (acting as "emunand", see below for how to setup)
-- Supports DS roms with an encrypted secure area if a DS arm7 bios is present at `/_pico/biosnds7.rom`
-- Supports a wide range of platforms, including popular flashcards and the DSpico
-- Built-in patches for DS Protect
-- Fast loading
+- Supports both homebrew and retail DS(i) roms.
+- Supports DSiWare and redirects NAND to the flashcard SD card (acting as "emunand", see below for how to setup).
+- Supports DS roms with an encrypted secure area.
+- Supports a wide range of platforms, including popular flashcards and the DSpico.
+- Built-in patches for DS Protect.
+- Fast loading.
+
+> [!IMPORTANT]
+> DSiWare and encrypted DS roms require a DS arm7 bios present at `/_pico/biosnds7.rom`.
 
 Note that Pico Loader can currently not run retail roms from the DSi SD card. Homebrew is supported, however.
 
-Return to loader is also currently not supported yet.
+Return to loader is also currently not supported in retail games yet.
 
 ## Supported platforms
 
@@ -52,6 +55,17 @@ The steps provided will assume you already have one of those environments set up
 1. Install [BlocksDS](https://blocksds.skylyrac.net/docs/setup/)
 2. Install [.NET 9.0](https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu-install?tabs=dotnet9&pivots=os-linux-ubuntu-2404) for your system (note: this link points to the instructions for Ubuntu, but links for most OS'es are available on the same page)
 
+## Cloning
+This repository includes submodules. Make sure to clone it recursively:
+```
+git clone --recursive https://github.com/LNH-team/pico-loader.git
+```
+
+If you cloned without initializing submodules, run the following command:
+```
+git submodule update --init
+```
+
 ## Compiling
 1. Run `make`
     - By default this compiles for the DSpico platform. To specify a different platform use `make PICO_PLATFORM=PLATFORM`, for example `make PICO_PLATFORM=R4`. See the table above for the supported platforms.
@@ -60,26 +74,17 @@ The steps provided will assume you already have one of those environments set up
     - `picoLoader9.bin` (the version for your platform)
     - `aplist.bin` (generated in the `data` folder of the repo)
     - `savelist.bin` (generated in the `data` folder of the repo)
+    - `patchlist.bin` (generated in the `data` folder of the repo)
 
 ## Emunand
-When running DSiWare, Pico Loader redirects NAND to the flashcard SD card. This requires the following files and folders, obtained from a DSi nand dump, in the root of your flashcard SD card:
+When running DSiWare and DSi system apps, Pico Loader redirects NAND to the flashcard SD card. This requires the following files and folders, obtained from a DSi/3DS nand, and a DS (**not DSi**) ARM7 BIOS dump, in the root of your flashcard SD card:
+- `_pico`
+    - `biosnds7.rom`
 - `photo` - The photo partition of nand will be redirected to this folder
 - `shared1`
-    - `TWLCFG0.dat`
-    - `TWLCFG1.dat`
 - `shared2`
-    - `launcher`
-        - `wrap.bin`
+    - `0000`
 - `sys`
-    - `log`
-        - `product.log`
-        - `shop.log`
-        - `sysmenu.log`
-    - `cert.sys`
-    - `dev.kp`
-    - `HWID.sgn`
-    - `HWINFO_N.dat`
-    - `HWINFO_S.dat`
     - `TWLFontTable.dat`
 
 ## How to use Pico Loader from homebrew
