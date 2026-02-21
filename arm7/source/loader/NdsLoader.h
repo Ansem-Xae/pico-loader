@@ -42,6 +42,13 @@ public:
         _argumentsLength = argumentsLength;
     }
 
+    /// @brief Sets the cheats to apply to the rom.
+    /// @param cheats The cheats.
+    void SetCheats(const pload_cheats_t* cheats)
+    {
+        _cheats = cheats;
+    }
+
     /// @brief Loads the rom according to the specified \p bootMode.
     /// @param bootMode The boot mode.
     void Load(BootMode bootMode);
@@ -53,6 +60,7 @@ private:
     const TCHAR* _launcherPath = nullptr;
     u32 _argumentsLength = 0;
     const char* _arguments = nullptr;
+    const pload_cheats_t* _cheats = nullptr;
     nds_header_twl_t _romHeader;
     DsiWareSaveResult _dsiwareSaveResult;
 

@@ -15,10 +15,12 @@
 #include "patches/arm7/DisableArm7WramClearPatch.h"
 #include "patches/arm7/sdk5/Sdk5DsiSdCardRedirectPatch.h"
 #include "patches/arm7/PokemonDownloaderArm7Patch.h"
+#include "patches/arm7/cheats/CheatEnginePatch.h"
 #include "Arm7Patcher.h"
 
-void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform) const
+void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, u32 cheatsLength, void*& cheatsPtr) const
 {
+    cheatsPtr = nullptr;
     auto romHeader = (const nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader;
     auto twlRomHeader = (const nds_header_twl_t*)TWL_SHARED_MEMORY->twlRomHeader;
     ModuleParamsLocator moduleParamsLocator;
@@ -91,10 +93,18 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform) const
             patchCollection.AddPatch(new PokemonDownloaderArm7Patch());
         }
 
+        CheatEnginePatch* cheatEnginePatch = nullptr;
+        if (cheatsLength > 0)
+        {
+            cheatEnginePatch = new CheatEnginePatch();
+            patchCollection.AddPatch(cheatEnginePatch);
+        }
+
         if (arm7ArenaPatch->FindPatchTarget(patchContext))
         {
             const u32 arm7PatchSpaceSize = 0x800;
             void* privateWramHeapStart = arm7ArenaPatch->GetArm7PrivateWramArenaLo();
+            u32 mainMemoryArenaLo = (u32)arm7ArenaPatch->GetMainMemoryArenaLo();
             if (0x0380F780 - (u32)privateWramHeapStart - 0x2100 >= arm7PatchSpaceSize)
             {
                 patchSpaceStart = privateWramHeapStart;
@@ -103,7 +113,6 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform) const
             else
             {
                 LOG_DEBUG("Arm 7 patches placed in main memory\n");
-                u32 mainMemoryArenaLo = (u32)arm7ArenaPatch->GetMainMemoryArenaLo();
                 if (gIsDsiMode && romHeader->unitCode == 0)
                 {
                     patchSpaceStart = (void*)(mainMemoryArenaLo & ~0xC00000); // 0x023...
@@ -112,8 +121,24 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform) const
                 {
                     patchSpaceStart = (void*)(mainMemoryArenaLo | 0x800000); // make sure it ends up in the right place while in 16MB mode
                 }
-                arm7ArenaPatch->SetMainMemoryArenaLo((u8*)mainMemoryArenaLo + arm7PatchSpaceSize);
+                mainMemoryArenaLo += arm7PatchSpaceSize;
             }
+            if (cheatsLength > 0)
+            {
+                void* cheats;
+                if (gIsDsiMode && romHeader->unitCode == 0)
+                {
+                    cheats = (void*)(mainMemoryArenaLo & ~0xC00000); // 0x023...
+                }
+                else
+                {
+                    cheats = (void*)(mainMemoryArenaLo | 0x800000); // make sure it ends up in the right place while in 16MB mode
+                }
+                cheatsPtr = cheats;
+                cheatEnginePatch->SetCheats(cheats);
+                mainMemoryArenaLo += cheatsLength;
+            }
+            arm7ArenaPatch->SetMainMemoryArenaLo((void*)mainMemoryArenaLo);
             patchContext.GetPatchHeap().AddFreeSpace(patchSpaceStart, arm7PatchSpaceSize);
         }
 

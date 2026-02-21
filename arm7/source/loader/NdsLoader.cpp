@@ -522,7 +522,13 @@ void NdsLoader::HandleHomebrewPatching()
 void NdsLoader::ApplyArm7Patches()
 {
     sendToArm9(IPC_COMMAND_ARM9_APPLY_ARM7_PATCHES);
+    sendToArm9(_cheats ? _cheats->length : 0);
     void* patchSpaceStart = (void*)receiveFromArm9();
+    void* cheatsPtr = (void*)receiveFromArm9();
+    if (cheatsPtr != nullptr && _cheats != nullptr)
+    {
+        memcpy(cheatsPtr, _cheats, _cheats->length);
+    }
     if (patchSpaceStart)
     {
         u32 mbk6 = 0;

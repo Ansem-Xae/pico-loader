@@ -10,16 +10,22 @@
 .global cheatengine_entry
 .type cheatengine_entry, %function
 cheatengine_entry:
-    push {r4, lr}
+    pop {r0, r1}
+    mov lr, r1
+    push {r4, r5, lr}
     ldr r4, cheatengine_cheatsPtr
+    ldr r5, [r4, #4] // pload_cheats_t::numberOfCheats
+    adds r4, #8
 entry_cheats_loop:
-    ldmia r4!, {r0} // r0 = cheat pointer
-    cmp r0, #0
-    beq entry_end
+    subs r5, #1
+    bmi entry_end
+    movs r0, r4
     bl cheatengine_runCheat
+    ldmia r4!, {r0} // r0 = length of cheat in bytes (pload_cheat_t::length)
+    adds r4, r0
     b entry_cheats_loop
 entry_end:
-    pop {r4}
+    pop {r4, r5}
     pop {r3}
     bx r3
 
@@ -38,7 +44,8 @@ cheatengine_runCheat:
     mov r6, r10
     mov r7, r11
     push {r4, r5, r6, r7} // r8, r9, r10, r11
-    ldr r1, [r0] // r1 = length of cheat code
+
+    ldmia r0!, {r1} // r1 = length of cheat code
     adds r1, r0
     mov r8, r1 // r8 = end of cheat code
     mov r9, r0 // r9 = loop start
@@ -389,7 +396,6 @@ FX_end:
 
 .balign 4
 
-// Pointer to list of pointers to cheat codes. Last pointer should be nullptr to terminate the list.
 .global cheatengine_cheatsPtr
 cheatengine_cheatsPtr:
     .word 0

@@ -155,10 +155,12 @@ static void handleApplyArm9PatchesCommand()
     ipc_sendWordDirect(1);
 }
 
-static void handleApplyArm7PatchesCommand()
+static void handleApplyArm7PatchesCommand(u32 cheatsLength)
 {
-    void* patchSpaceStart = Arm7Patcher().ApplyPatches(sLoaderPlatform);
+    void* cheats = nullptr;
+    void* patchSpaceStart = Arm7Patcher().ApplyPatches(sLoaderPlatform, cheatsLength, cheats);
     ipc_sendWordDirect((u32)patchSpaceStart);
+    ipc_sendWordDirect((u32)cheats);
 }
 
 static void handleSetAPInfoCommand()
@@ -289,7 +291,8 @@ static void handleArm7Command(u32 command)
         }
         case IPC_COMMAND_ARM9_APPLY_ARM7_PATCHES:
         {
-            handleApplyArm7PatchesCommand();
+            u32 cheatsLength = receiveFromArm7();
+            handleApplyArm7PatchesCommand(cheatsLength);
             break;
         }
         case IPC_COMMAND_ARM9_SET_AP_INFO:

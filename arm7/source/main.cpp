@@ -219,10 +219,19 @@ extern "C" void loaderMain()
     }
     else
     {
+        pload_cheats_t* cheats = nullptr;
+        if (gLoaderHeader.v3.cheats != nullptr && gLoaderHeader.v3.cheats->numberOfCheats != 0)
+        {
+            // Copy cheats to vram
+            cheats = (pload_cheats_t*)malloc(gLoaderHeader.v3.cheats->length);
+            memcpy(cheats, gLoaderHeader.v3.cheats, gLoaderHeader.v3.cheats->length);
+        }
+
         sLoader.SetRomPath(gLoaderHeader.loadParams.romPath);
         handleSavePath();
         sLoader.SetArguments(gLoaderHeader.loadParams.arguments, gLoaderHeader.loadParams.argumentsLength);
         sLoader.SetLauncherPath(gLoaderHeader.v2.launcherPath);
+        sLoader.SetCheats(cheats);
         sLoader.Load(BootMode::Normal);
     }
 
