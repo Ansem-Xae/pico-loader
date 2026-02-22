@@ -13,6 +13,13 @@ cheatengine_entry:
     pop {r0, r1}
     mov lr, r1
     push {r4, r5, lr}
+
+    // increment 16-bit counter for C5
+    adr r1, c5counter
+    ldrh r0, [r1]
+    adds r0, #1
+    strh r0, [r1]
+
     ldr r4, cheatengine_cheatsPtr
     ldr r5, [r4, #4] // pload_cheats_t::numberOfCheats
     adds r4, #8
@@ -30,11 +37,10 @@ entry_end:
     bx r3
 
 runCheat_end:
-    pop {r4, r5, r6, r7} // r8, r9, r10, r11
+    pop {r4, r5, r6} // r8, r9, r10
     mov r8, r4
     mov r9, r5
     mov r10, r6
-    mov r11, r7
     pop {r4, r5, r6, r7, pc}
 
 cheatengine_runCheat:
@@ -42,8 +48,7 @@ cheatengine_runCheat:
     mov r4, r8
     mov r5, r9
     mov r6, r10
-    mov r7, r11
-    push {r4, r5, r6, r7} // r8, r9, r10, r11
+    push {r4, r5, r6} // r8, r9, r10
 
     ldmia r0!, {r1} // r1 = length of cheat code
     adds r1, r0
@@ -54,7 +59,6 @@ cheatengine_runCheat:
     movs r6, #0 // r6 = data register
     movs r7, #1 // r7 = condition stack
     mov r10, r7 // r10 = loop condition stack backup
-    mov r11, r6 // r11 = c5count
 runCheat_opcode_loop:
     cmp r0, r8
     bhs runCheat_end
@@ -64,8 +68,6 @@ runCheat_opcode_loop:
     // == condition check ==
 
     lsrs r3, r1, #24 // r3 = op
-    cmp r3, #0xC5 // C5 has a special condition check
-    beq 1f
     subs r3, #0xD0
     cmp r3, #2
     bls 1f // D0 - D2 are not condition checked
@@ -224,29 +226,16 @@ opcode_C4: // offset = pointer to C4000000 opcode
     subs r5, #8
     b runCheat_opcode_loop
 
-opcode_C5: // count++ / IF (count & b.l) == b.h
-    // c5count++
-    mov r3, r11
-    adds r3, #1
-    mov r11, r3
-
-    // condition check for C5
-    lsrs r1, r7, #1
-    bcc 1f
-
+opcode_C5: // IF (count & b.l) == b.h
+    ldr r3, c5counter
     lsls r7, r7, #1
-
     lsrs r1, r2, #16 // chk
-
     lsls r2, r2, #16
     lsrs r2, r2, #16 // mask
     ands r3, r2
-
     cmp r3, r1
     bne 1f
-
     adds r7, #1
-
 1:
     b runCheat_opcode_loop
 
@@ -256,6 +245,8 @@ opcode_C6: // u32[b] = offset
 
 opcode_DX:
     lsrs r3, r1, #24
+    cmp r3, #0xD
+        bhs opcode_DX_invalid
     lsls r3, r3, #1
     add r3, pc
     ldrh r3, [r3, #2]
@@ -275,12 +266,10 @@ DX_table:
     .short (opcode_DA - DX_table - 2)
     .short (opcode_DB - DX_table - 2)
     .short (opcode_DC - DX_table - 2)
-    .short (opcode_DD - DX_table - 2)
-    .short (opcode_DE - DX_table - 2)
-    .short (opcode_DF - DX_table - 2)
 
 opcode_D0: // ENDIF
     lsrs r7, r7, #1
+opcode_DX_invalid:
     b runCheat_opcode_loop
 
 opcode_D1: // NEXT
@@ -314,6 +303,48 @@ opcode_D3: // offset = b
     b runCheat_opcode_loop
 
 opcode_D4: // data op
+    lsls r1, r1, #24
+    lsrs r1, r1, #22
+    cmp r1, #(9 << 2) // if data op >= 9, ignore
+        bhs opcode_D4_invalid
+    add pc, r1
+    nop
+
+opcode_D4_0: // datareg += b
+    adds r6, r2
+opcode_D4_invalid:
+    b runCheat_opcode_loop
+
+opcode_D4_1: // datareg |= b
+    orrs r6, r2
+    b runCheat_opcode_loop
+
+opcode_D4_2: // datareg &= b
+    ands r6, r2
+    b runCheat_opcode_loop
+
+opcode_D4_3: // datareg ^= b
+    eors r6, r2
+    b runCheat_opcode_loop
+
+opcode_D4_4: // datareg >>= b
+    lsls r6, r6, r2
+    b runCheat_opcode_loop
+
+opcode_D4_5: // datareg <<= b
+    lsrs r6, r6, r2
+    b runCheat_opcode_loop
+
+opcode_D4_6: // datareg = ROR(datareg, b)
+    rors r6, r2
+    b runCheat_opcode_loop
+
+opcode_D4_7: // (s32)datareg >>= b
+    asrs r6, r6, r2
+    b runCheat_opcode_loop
+
+opcode_D4_8: // datareg *= b
+    muls r6, r2
     b runCheat_opcode_loop
 
 opcode_D5: // datareg = b
@@ -349,11 +380,6 @@ opcode_DB: // datareg = u8[b+offset]
 
 opcode_DC: // offset += b
     adds r5, r2
-    // fall through to b runCheat_opcode_loop
-
-opcode_DD:
-opcode_DE:
-opcode_DF:
     b runCheat_opcode_loop
 
 opcode_EX: // copy b param bytes to address a+offset
@@ -395,6 +421,9 @@ FX_end:
     b runCheat_opcode_loop
 
 .balign 4
+
+c5counter:
+    .word 0
 
 .global cheatengine_cheatsPtr
 cheatengine_cheatsPtr:
