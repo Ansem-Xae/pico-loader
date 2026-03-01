@@ -400,7 +400,7 @@ opcode_FX: // copy b bytes from address offset to address a
     movs r3, r5
 FX_word_loop:
     cmp r2, #4
-    bls FX_byte_loop
+    blo FX_byte_loop
     ldmia r3!, {r0}
     stmia r1!, {r0}
     subs r2, #4
@@ -408,7 +408,7 @@ FX_word_loop:
 
 FX_byte_loop:
     cmp r2, #1
-    bls FX_end
+    blo FX_end
     ldrb r0, [r3]
     adds r3, #1
     strb r0, [r1]
