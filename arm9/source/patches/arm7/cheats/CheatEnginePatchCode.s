@@ -1,11 +1,33 @@
 .cpu arm7tdmi
 .section "patch_cheatengine", "ax"
 .syntax unified
-.thumb
 
 // For reference on how Action Replay codes work for the DS
 // - https://problemkaputt.de/gbatek-ds-cart-cheat-action-replay-ds.htm
 // - https://github.com/melonDS-emu/melonDS/blob/master/src/AREngine.cpp
+
+.arm
+.global cheatengine_entry_arm
+.type cheatengine_entry_arm, %function
+cheatengine_entry_arm:
+    adr r12, cheatengine_entry + 1
+    bx r12
+
+.thumb
+.global cheatengine_entry_thumb_replace
+.type cheatengine_entry_thumb_replace, %function
+cheatengine_entry_thumb_replace:
+    push {r4, r5, lr} // r5 is a dummy
+    ldr r0, [r0]
+    adr r4, cheatengine_entry_thumb_replace_return
+    cmp r0, #0
+    mov pc, r1
+
+.balign 4
+
+cheatengine_entry_thumb_replace_return:
+    pop {r4}
+    nop
 
 .global cheatengine_entry
 .type cheatengine_entry, %function
@@ -79,7 +101,7 @@ runCheat_opcode_loop:
     cmp r3, #0xE0
     bne runCheat_opcode_loop
 
-    // opcode E0 has a dynamic length
+    // opcode E has a dynamic length
     adds r2, #7
     movs r3, #7
     bics r2, r3 // pad length to multiple of 8
@@ -385,10 +407,11 @@ opcode_DC: // offset += b
 opcode_EX: // copy b param bytes to address a+offset
     push {r0}
 
-    adds r0, r2
-    adds r0, #7
-    movs r3, #7
-    bics r0, r3 // pad length to multiple of 8
+    // pad length to multiple of 8
+    adds r3, r2, #7
+    lsrs r3, r3, #3
+    lsls r3, r3, #3
+    adds r0, r3
 
     pop {r3}
     push {r0}

@@ -32,4 +32,5 @@
 #define THUMB_STR_IMM(rd, rb, imm)  (0x6000 | (((imm) >> 2) << 6) | ((rb) << 3) | (rd))
 #define THUMB_STR_SP_IMM(rd, imm)   (0x9000 | ((rd) << 8) | (((imm) >> 2) & 0xFF))
 #define THUMB_LDR_SP_IMM(rd, imm)   (0x9800 | ((rd) << 8) | (((imm) >> 2) & 0xFF))
+#define THUMB_ADD_PC_IMM(rd, imm)   (0xA000 | ((rd) << 8) | (((imm) >> 2) & 0xFF))
 #define THUMB_SVC(x)                (0xDF00 | (x))
