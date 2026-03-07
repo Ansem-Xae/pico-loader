@@ -18,6 +18,18 @@
 #include "patches/arm7/cheats/CheatEnginePatch.h"
 #include "Arm7Patcher.h"
 
+static u32 correctAddress(u32 address, const nds_header_ntr_t* romHeader)
+{
+    if (gIsDsiMode && romHeader->unitCode == 0)
+    {
+        return address & ~0xC00000; // 0x023...
+    }
+    else
+    {
+        return address | 0x800000; // make sure it ends up in the right place while in 16MB mode
+    }
+}
+
 void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, u32 cheatsLength, void*& cheatsPtr) const
 {
     cheatsPtr = nullptr;
@@ -63,6 +75,37 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, u32 cheats
         auto arm7ArenaPatch = new OsGetInitArenaLoPatch();
         patchCollection.AddPatch(arm7ArenaPatch);
 
+        if (!arm7ArenaPatch->FindPatchTarget(patchContext))
+        {
+            ErrorDisplay().PrintError("Failed to apply arm7 patches.");
+        }
+
+        const u32 arm7PatchSpaceSize = 0x800;
+        void* privateWramHeapStart = arm7ArenaPatch->GetArm7PrivateWramArenaLo();
+        u32 mainMemoryArenaLo = (u32)arm7ArenaPatch->GetMainMemoryArenaLo();
+        if (0x0380F780 - (u32)privateWramHeapStart - 0x2100 >= arm7PatchSpaceSize)
+        {
+            patchSpaceStart = privateWramHeapStart;
+            arm7ArenaPatch->SetArm7PrivateWramArenaLo((u8*)patchSpaceStart + arm7PatchSpaceSize);
+        }
+        else
+        {
+            LOG_DEBUG("Arm 7 patches placed in main memory\n");
+            patchSpaceStart = (void*)correctAddress(mainMemoryArenaLo, romHeader);
+            mainMemoryArenaLo += arm7PatchSpaceSize;
+        }
+
+        patchContext.GetPatchHeap().AddFreeSpace(patchSpaceStart, arm7PatchSpaceSize);
+
+        if (cheatsLength > 0)
+        {
+            void* cheats = (void*)correctAddress(mainMemoryArenaLo, romHeader);
+            LOG_DEBUG("Cheats placed at 0x%p\n", cheats);
+            cheatsPtr = cheats;
+            patchCollection.AddPatch(new CheatEnginePatch(cheats));
+            mainMemoryArenaLo += cheatsLength;
+        }
+
         if (romHeader->unitCode == 0) // seems only present on NITRO, not on HYBRID or LIMITED
         {
             patchCollection.AddPatch(new DisableArm7WramClearPatch());
@@ -77,12 +120,16 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, u32 cheats
 
             if (!twlRomHeader->IsDsiWare())
             {
-                patchCollection.AddPatch(new CardiDoTaskFromArm9Patch());
+                void* saveTmpBuffer = (void*)correctAddress(mainMemoryArenaLo, romHeader);
+                mainMemoryArenaLo += 512;
+                patchCollection.AddPatch(new CardiDoTaskFromArm9Patch(saveTmpBuffer));
             }
         }
         else
         {
-            patchCollection.AddPatch(new CardiTaskThreadPatch());
+            void* saveTmpBuffer = (void*)correctAddress(mainMemoryArenaLo, romHeader);
+            mainMemoryArenaLo += 512;
+            patchCollection.AddPatch(new CardiTaskThreadPatch(saveTmpBuffer));
         }
 
         if (*(vu32*)0x02FFF00C == GAMECODE("ADAJ") &&
@@ -93,54 +140,7 @@ void* Arm7Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, u32 cheats
             patchCollection.AddPatch(new PokemonDownloaderArm7Patch());
         }
 
-        CheatEnginePatch* cheatEnginePatch = nullptr;
-        if (cheatsLength > 0)
-        {
-            cheatEnginePatch = new CheatEnginePatch();
-            patchCollection.AddPatch(cheatEnginePatch);
-        }
-
-        if (arm7ArenaPatch->FindPatchTarget(patchContext))
-        {
-            const u32 arm7PatchSpaceSize = 0x800;
-            void* privateWramHeapStart = arm7ArenaPatch->GetArm7PrivateWramArenaLo();
-            u32 mainMemoryArenaLo = (u32)arm7ArenaPatch->GetMainMemoryArenaLo();
-            if (0x0380F780 - (u32)privateWramHeapStart - 0x2100 >= arm7PatchSpaceSize)
-            {
-                patchSpaceStart = privateWramHeapStart;
-                arm7ArenaPatch->SetArm7PrivateWramArenaLo((u8*)patchSpaceStart + arm7PatchSpaceSize);
-            }
-            else
-            {
-                LOG_DEBUG("Arm 7 patches placed in main memory\n");
-                if (gIsDsiMode && romHeader->unitCode == 0)
-                {
-                    patchSpaceStart = (void*)(mainMemoryArenaLo & ~0xC00000); // 0x023...
-                }
-                else
-                {
-                    patchSpaceStart = (void*)(mainMemoryArenaLo | 0x800000); // make sure it ends up in the right place while in 16MB mode
-                }
-                mainMemoryArenaLo += arm7PatchSpaceSize;
-            }
-            if (cheatsLength > 0)
-            {
-                void* cheats;
-                if (gIsDsiMode && romHeader->unitCode == 0)
-                {
-                    cheats = (void*)(mainMemoryArenaLo & ~0xC00000); // 0x023...
-                }
-                else
-                {
-                    cheats = (void*)(mainMemoryArenaLo | 0x800000); // make sure it ends up in the right place while in 16MB mode
-                }
-                cheatsPtr = cheats;
-                cheatEnginePatch->SetCheats(cheats);
-                mainMemoryArenaLo += cheatsLength;
-            }
-            arm7ArenaPatch->SetMainMemoryArenaLo((void*)mainMemoryArenaLo);
-            patchContext.GetPatchHeap().AddFreeSpace(patchSpaceStart, arm7PatchSpaceSize);
-        }
+        arm7ArenaPatch->SetMainMemoryArenaLo((void*)mainMemoryArenaLo);
 
         // The arm7 patcher uses the fact that the ntr wram is mirrored over the entire 03 region.
         // Since the reserved patch space is smaller than the ntr wram, it will never overlap.

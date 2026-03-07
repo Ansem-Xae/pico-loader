@@ -5,16 +5,14 @@
 class CheatEnginePatch : public Patch
 {
 public:
+    explicit CheatEnginePatch(const void* cheats)
+        : _cheats(cheats) { }
+
     bool FindPatchTarget(PatchContext& patchContext) override;
     void ApplyPatch(PatchContext& patchContext) override;
 
-    void SetCheats(const void* cheats)
-    {
-        _cheats = cheats;
-    }
-
 private:
-    const void* _cheats = nullptr;
+    const void* _cheats;
     u32* _vblankIrqHandler = nullptr;
     const u32* _foundPattern = nullptr;
 };

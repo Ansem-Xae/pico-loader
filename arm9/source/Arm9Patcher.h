@@ -12,12 +12,20 @@ class OverlayHookPatch;
 class Arm9Patcher
 {
 public:
+    struct PatchResult
+    {
+        /// @brief Pointer to the cheats pointer used for soft reset.
+        ///        This pointer must be set to keep cheats over soft resets.
+        void** softResetCheatsPointer;
+    };
+
     /// @brief Applies arm9 patches using the given \p loaderPlatform.
     /// @param loaderPlatform The loader platform to use.
     /// @param apListEntry The AP list entry for the rom being loaded, or \c nullptr if there is none.
     /// @param isCloneBootRom \c true if the rom being loaded is a clone boot rom, or \c false otherwise.
     /// @param loaderInfo The loader info to use.
-    void ApplyPatches(const LoaderPlatform* loaderPlatform, const ApListEntry* apListEntry,
+    /// @return Some information resulting from the patching.
+    PatchResult ApplyPatches(const LoaderPlatform* loaderPlatform, const ApListEntry* apListEntry,
         bool isCloneBootRom, const loader_info_t* loaderInfo) const;
 
 private:

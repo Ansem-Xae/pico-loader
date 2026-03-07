@@ -68,25 +68,24 @@ void CardiDoTaskFromArm9Patch::ApplyPatch(PatchContext& patchContext)
         patchContext.GetPatchCodeCollection(), patchContext.GetPatchHeap());
     auto sectorRemapPatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<SaveOffsetToSdSectorPatchCode>(
         patchContext.GetPatchHeap(), SHARED_SAVE_FILE_INFO);
-    void* tmpBuffer = patchContext.GetPatchHeap().Alloc(512);
     auto readSavePatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<ReadSavePatchCode>(
         patchContext.GetPatchHeap(),
         sectorRemapPatchCode,
         readPatchCode,
-        tmpBuffer
+        _saveTmpBuffer
     );
     auto writeSavePatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<WriteSavePatchCode>(
         patchContext.GetPatchHeap(),
         sectorRemapPatchCode,
         readPatchCode,
         writePatchCode,
-        tmpBuffer
+        _saveTmpBuffer
     );
     auto verifySavePatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<VerifySavePatchCode>(
         patchContext.GetPatchHeap(),
         sectorRemapPatchCode,
         readPatchCode,
-        tmpBuffer
+        _saveTmpBuffer
     );
 
     __patch_carditaskthread_readsave_asm_address = (u32)readSavePatchCode->GetReadSaveFunction();

@@ -47,7 +47,7 @@ static const u32 sMiiUncompressBackwardPatternOld2[] = { 0xE3500000, 0x0A00002B,
 static const u32 sMiiUncompressBackwardPattern[] = { 0xE3500000, 0x0A000027, 0xE92D00F0, 0xE9100006 };
 static const u32 sMiiUncompressBackwardPatternHybrid[] = { 0xE3500000, 0x0A000029, 0xE92D01F0, 0xE9100006 };
 
-void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApListEntry* apListEntry,
+Arm9Patcher::PatchResult Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApListEntry* apListEntry,
     bool isCloneBootRom, const loader_info_t* loaderInfo) const
 {
     auto romHeader = (const nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader;
@@ -165,6 +165,7 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
         loaderPlatform
     };
     PatchCollection patchCollection;
+    OSResetSystemPatch* osResetSystemPatch = nullptr;
     if (sdkVersion != 0)
     {
         if (*(vu32*)0x02FFF00C == GAMECODE("ADAJ") &&
@@ -217,7 +218,8 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
         }
 
         patchCollection.AddPatch(new CardiReadRomIdCorePatch());
-        patchCollection.AddPatch(new OSResetSystemPatch(loaderInfo));
+        osResetSystemPatch = new OSResetSystemPatch(loaderInfo);
+        patchCollection.AddPatch(osResetSystemPatch);
         AddGamePatches(patchCollection, romHeader->gameCode, apListEntry);
 
         if (moduleParams && compressedEnd != 0)
@@ -236,6 +238,17 @@ void Arm9Patcher::ApplyPatches(const LoaderPlatform* loaderPlatform, const ApLis
     dc_flushAll();
     dc_drainWriteBuffer();
     ic_invalidateAll();
+
+    void** softResetCheatsPointer = nullptr;
+    if (osResetSystemPatch != nullptr)
+    {
+        softResetCheatsPointer = osResetSystemPatch->GetCheatsPointerAtTarget();
+    }
+
+    return PatchResult
+    {
+        .softResetCheatsPointer = softResetCheatsPointer
+    };
 }
 
 const u32* Arm9Patcher::FindMIiUncompressBackward(u32 arm9LoadAddress, SdkVersion sdkVersion) const

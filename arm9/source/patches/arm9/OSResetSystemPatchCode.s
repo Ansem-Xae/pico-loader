@@ -108,16 +108,24 @@ patch_osresetsystem_bootPicoLoader:
     ldmia r5, {r3, r5}
     ldrh r0, [r3, #2] // loader_info_t::picoLoaderBootDrive
     strh r0, [r5, #8] // pload_header7_t::bootDrive
-    ldr r0, [r5] // pload_header7_t::entryPoint
+
+    adr r0, regVramCntA
+    ldmia r0, {r0, r4, r6, r7}
+    // r0 = regVramCntA
+    // r4 = patch_osresetsystem_arm7Entry_address
+    // r6 = vramCDSettings
+    // r7 = patch_osresetsystem_cheats_address
+
+    movs r2, #0x41
+    lsls r2, r2, #4 // 0x410
+    str r7, [r5, r2] // pload_header7_t::v3.cheats
+    ldr r1, [r5] // pload_header7_t::entryPoint
 
     // set NTR_SHARED_MEMORY->romHeader.arm7EntryAddress
-    ldr r4, patch_osresetsystem_arm7Entry_address
-    str r0, [r4]
+    str r1, [r4]
 
     // map vram CD to arm7
-    ldr r0,= 0x04000240
-    ldr r7,= 0x8A82
-    strh r7, [r0, #2]
+    strh r6, [r0, #2]
 
     adds r0, #(0x04000180 - 0x04000240) // REG_IPC_SYNC
     movs r1, #1
@@ -139,21 +147,17 @@ twl_arm7_sync:
     ldr r7,= 0x02FFFC24
     movs r1, #1
     strh r1, [r7, #4]
-
-    ldrh r6, [r7, #2]
-    ldrh r1, [r7]
-1:
-    adds r1, #1
-    strh r1, [r7]
-    ldrh r4, [r7, #2]
-    cmp r6, r4
-    beq 1b
-    adds r1, #1
-    strh r1, [r7]
+    mov r11, pc
+    b do_sync
 
     movs r1, #3
     strh r1, [r7, #4]
+    mov r11, pc
+    b do_sync
 
+    mov pc, lr
+
+do_sync:
     ldrh r6, [r7, #2]
     ldrh r1, [r7]
 1:
@@ -164,14 +168,23 @@ twl_arm7_sync:
     beq 1b
     adds r1, #1
     strh r1, [r7]
-
-    mov pc, lr
+    mov pc, r11
 
 .balign 4
+
+regVramCntA:
+    .word 0x04000240
 
 .global patch_osresetsystem_arm7Entry_address
 patch_osresetsystem_arm7Entry_address:
     .word 0x027FFE34
+
+vramCDSettings:
+    .word 0x8A82
+
+.global patch_osresetsystem_cheats_address
+patch_osresetsystem_cheats_address:
+    .word 0
 
 .pool
 .end

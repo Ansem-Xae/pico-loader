@@ -22,11 +22,15 @@ public:
         ThumbF
     };
 
+    explicit CardiTaskThreadPatch(void* saveTmpBuffer)
+        : _saveTmpBuffer(saveTmpBuffer) { }
+
     bool FindPatchTarget(PatchContext& patchContext) override;
     void ApplyPatch(PatchContext& patchContext) override;
 
 private:
     u32* _cardiTaskThread = nullptr;
+    void* _saveTmpBuffer;
     PatchVariant _patchVariant = PatchVariant::None;
 
     void ApplyArmPatch(void* patch1Address) const;

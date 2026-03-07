@@ -12,8 +12,14 @@ public:
     bool FindPatchTarget(PatchContext& patchContext) override;
     void ApplyPatch(PatchContext& patchContext) override;
 
+    void** GetCheatsPointerAtTarget() const
+    {
+        return _cheatsPointer;
+    }
+
 private:
     u32* _osResetSystem = nullptr;
     u32 _hybrid = false;
     const loader_info_t* _loaderInfo;
+    void** _cheatsPointer = nullptr;
 };

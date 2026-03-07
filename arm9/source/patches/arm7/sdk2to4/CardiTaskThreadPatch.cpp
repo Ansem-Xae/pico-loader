@@ -103,13 +103,12 @@ void CardiTaskThreadPatch::ApplyPatch(PatchContext& patchContext)
         patchContext.GetPatchHeap(),
         (const save_file_info_t*)((u32)SHARED_SAVE_FILE_INFO - 0x02F00000 + 0x02700000)
     );
-    void* tmpBuffer = patchContext.GetPatchHeap().Alloc(512);
     auto readSavePatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<ReadSavePatchCode>
     (
         patchContext.GetPatchHeap(),
         sectorRemapPatchCode,
         readPatchCode,
-        tmpBuffer
+        _saveTmpBuffer
     );
     auto writeSavePatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<WriteSavePatchCode>
     (
@@ -117,13 +116,13 @@ void CardiTaskThreadPatch::ApplyPatch(PatchContext& patchContext)
         sectorRemapPatchCode,
         readPatchCode,
         writePatchCode,
-        tmpBuffer
+        _saveTmpBuffer
     );
     auto verifySavePatchCode = patchContext.GetPatchCodeCollection().AddUniquePatchCode<VerifySavePatchCode>(
         patchContext.GetPatchHeap(),
         sectorRemapPatchCode,
         readPatchCode,
-        tmpBuffer
+        _saveTmpBuffer
     );
 
     __patch_carditaskthread_readsave_asm_address = (u32)readSavePatchCode->GetReadSaveFunction();

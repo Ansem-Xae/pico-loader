@@ -47,6 +47,7 @@ static u32 sRomDirSector;
 static u32 sRomDirSectorOffset;
 static u16 sIsCloneBootRom;
 static loader_info_t sLoaderInfo;
+static void** sSoftResetCheatsPointer = nullptr;
 
 u16 gIsDsiMode;
 
@@ -147,11 +148,12 @@ static void handleClearMainMemCommand()
 
 static void handleApplyArm9PatchesCommand()
 {
-    Arm9Patcher().ApplyPatches(
+    auto result = Arm9Patcher().ApplyPatches(
         sLoaderPlatform,
         sApListEntry.GetGameCode() == 0 ? nullptr : &sApListEntry,
         sIsCloneBootRom,
         &sLoaderInfo);
+    sSoftResetCheatsPointer = result.softResetCheatsPointer;
     ipc_sendWordDirect(1);
 }
 
@@ -159,6 +161,10 @@ static void handleApplyArm7PatchesCommand(u32 cheatsLength)
 {
     void* cheats = nullptr;
     void* patchSpaceStart = Arm7Patcher().ApplyPatches(sLoaderPlatform, cheatsLength, cheats);
+    if (sSoftResetCheatsPointer != nullptr)
+    {
+        *sSoftResetCheatsPointer = cheats;
+    }
     ipc_sendWordDirect((u32)patchSpaceStart);
     ipc_sendWordDirect((u32)cheats);
 }
