@@ -98,10 +98,13 @@ runCheat_opcode_loop:
     bcs 1f // if set, the opcode is executed
 
     lsrs r3, r1, #24 // r3 = op
+    cmp r3, #0xC2
+    beq 2f
     cmp r3, #0xE0
     bne runCheat_opcode_loop
 
-    // opcode E has a dynamic length
+2:
+    // opcode C2 and EX have a dynamic length
     adds r2, #7
     movs r3, #7
     bics r2, r3 // pad length to multiple of 8
@@ -229,6 +232,8 @@ opcode_CX:
     lsrs r3, r1, #24 // r3 = op
     cmp r3, #0
     beq opcode_C0
+    cmp r3, #2
+    beq opcode_C2
     cmp r3, #4
     beq opcode_C4
     cmp r3, #5
@@ -242,6 +247,26 @@ opcode_C0: // FOR 0..b
     mov r9, r0 // loop start
     mov r10, r7 // condition stack backup
     b runCheat_opcode_loop
+
+opcode_C2: // execute code from cheat list
+    movs r3, r0
+
+    // pad length to multiple of 8
+    adds r2, r2, #7
+    lsrs r2, r2, #3
+    lsls r2, r2, #3
+    adds r0, r2
+
+    lsrs r1, r1, #1
+    bcc 1f
+    adds r3, #1 // set thumb bit
+1:
+    push {r0}
+    bl 2f
+    pop {r0}
+    b runCheat_opcode_loop
+2:
+    bx r3
 
 opcode_C4: // offset = pointer to C4000000 opcode
     movs r5, r0

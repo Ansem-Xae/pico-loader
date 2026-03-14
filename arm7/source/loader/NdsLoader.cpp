@@ -27,6 +27,7 @@
 #include "DSMode.h"
 #include "Arm7IoRegisterClearer.h"
 #include "PatchListFactory.h"
+#include "CheatPreprocessor.h"
 #include "NdsLoader.h"
 
 #define AP_LIST_PATH      "/_pico/aplist.bin"
@@ -523,6 +524,7 @@ void NdsLoader::ApplyArm7Patches()
 {
     sendToArm9(IPC_COMMAND_ARM9_APPLY_ARM7_PATCHES);
     sendToArm9(_cheats ? _cheats->length : 0);
+    PreprocessCheats();
     void* patchSpaceStart = (void*)receiveFromArm9();
     void* cheatsPtr = (void*)receiveFromArm9();
     if (cheatsPtr != nullptr && _cheats != nullptr)
@@ -566,6 +568,20 @@ void NdsLoader::ApplyArm7Patches()
         }
 
         memcpy(patchSpaceStart, patchCode.get(), patchSpaceSize);
+    }
+}
+
+void NdsLoader::PreprocessCheats()
+{
+    if (_cheats != nullptr)
+    {
+        CheatPreprocessor cheatPreprocessor;
+        auto cheat = &_cheats->firstCheat;
+        for (u32 i = 0; i < _cheats->numberOfCheats; i++)
+        {
+            cheatPreprocessor.PreprocessCheat(cheat);
+            cheat = (pload_cheat_t*)((u8*)cheat + cheat->length);
+        }
     }
 }
 
