@@ -580,7 +580,7 @@ void NdsLoader::PreprocessCheats()
         for (u32 i = 0; i < _cheats->numberOfCheats; i++)
         {
             cheatPreprocessor.PreprocessCheat(cheat);
-            cheat = (pload_cheat_t*)((u8*)cheat + cheat->length);
+            cheat = (pload_cheat_t*)((u8*)cheat + sizeof(u32) + cheat->length);
         }
     }
 }
