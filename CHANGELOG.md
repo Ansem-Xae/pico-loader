@@ -5,6 +5,8 @@
 ### Added
 - Support for the SuperChis slot 2 card - by @edo9300
 - Most of the remaining SDK 2-4 DMA patches - by @taxicat1
+- Support for cheats
+    - The Pico Loader API was updated to v3 for this purpose.
 
 ### Fixed
 - Star Wars Jedi Alliance patch - by @taxicat1
