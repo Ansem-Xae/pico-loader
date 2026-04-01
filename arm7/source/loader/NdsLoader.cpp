@@ -930,6 +930,10 @@ void NdsLoader::HandleDldiPatching()
 {
     if (_skipDldiPatch)
     {
+        PatchDldiScrambleBits((u32*)_romHeader.arm9LoadAddress, _romHeader.arm9Size);
+        PatchDldiScrambleBits((u32*)_romHeader.arm7LoadAddress, _romHeader.arm7Size);
+        return;
+    }
 
     if (!ShouldAttemptDldiPatch())
     {
