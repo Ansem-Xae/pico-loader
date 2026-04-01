@@ -176,6 +176,11 @@ extern "C" void loaderMain()
 
     memset(&gFatFs, 0, sizeof(gFatFs));
     bool multiboot = (gLoaderHeader.bootDrive & PLOAD_BOOT_DRIVE_MULTIBOOT_FLAG) != 0;
+    bool igrRequested = (gLoaderHeader.bootDrive == 0xFF);
+    if (igrRequested)
+    {
+        gLoaderHeader.bootDrive = PLOAD_BOOT_DRIVE_DLDI;
+    }
     gLoaderHeader.bootDrive &= ~PLOAD_BOOT_DRIVE_MULTIBOOT_FLAG;
     switch (gLoaderHeader.bootDrive)
     {
@@ -220,10 +225,20 @@ extern "C" void loaderMain()
     }
     else if (((nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader)->arm7EntryAddress == (u32)gLoaderHeader.entryPoint)
     {
-        LOG_DEBUG("Retail soft reset detected\n");
-        u32 originalArm7EntryAddress = ((nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.cardRomHeader)->arm7EntryAddress;
-        ((nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader)->arm7EntryAddress = originalArm7EntryAddress;
-        sLoader.Load(BootMode::SdkResetSystem);
+        if (igrRequested)
+        {
+            LOG_DEBUG("IGR: loading launcher\n");
+            sLoader.SetRomPath("/_picoboot.nds");
+            sLoader.SetSkipDldiPatch(true);
+            sLoader.Load(BootMode::Normal);
+        }
+        else
+        {
+            LOG_DEBUG("Retail soft reset detected\n");
+            u32 originalArm7EntryAddress = ((nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.cardRomHeader)->arm7EntryAddress;
+            ((nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader)->arm7EntryAddress = originalArm7EntryAddress;
+            sLoader.Load(BootMode::SdkResetSystem);
+        }
     }
     else
     {
