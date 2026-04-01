@@ -109,21 +109,6 @@ patch_osresetsystem_bootPicoLoader:
     ldrh r0, [r3, #2] // loader_info_t::picoLoaderBootDrive
     strh r0, [r5, #8] // pload_header7_t::bootDrive
 
-    // IGR: if DOWN held during soft reset, overwrite bootDrive with 0xFF
-    // Construct 0x04000130 (REG_KEYINPUT) without literal pool
-    movs r1, #4
-    lsls r1, r1, #24       // r1 = 0x04000000
-    movs r2, #0x4C
-    lsls r2, r2, #2        // r2 = 0x130
-    adds r1, r2             // r1 = 0x04000130
-    ldrh r1, [r1]
-    movs r2, #0x80          // bit 7 = DOWN (0 when pressed)
-    tst r1, r2
-    bne 1f
-    movs r1, #0xFF
-    strh r1, [r5, #8]       // bootDrive = 0xFF
-1:
-
     adr r0, regVramCntA
     ldmia r0, {r0, r4, r6, r7}
     // r0 = regVramCntA

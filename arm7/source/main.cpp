@@ -176,11 +176,6 @@ extern "C" void loaderMain()
 
     memset(&gFatFs, 0, sizeof(gFatFs));
     bool multiboot = (gLoaderHeader.bootDrive & PLOAD_BOOT_DRIVE_MULTIBOOT_FLAG) != 0;
-    bool igrRequested = (gLoaderHeader.bootDrive == 0xFF);
-    if (igrRequested)
-    {
-        gLoaderHeader.bootDrive = PLOAD_BOOT_DRIVE_DLDI;
-    }
     gLoaderHeader.bootDrive &= ~PLOAD_BOOT_DRIVE_MULTIBOOT_FLAG;
     switch (gLoaderHeader.bootDrive)
     {
@@ -225,6 +220,17 @@ extern "C" void loaderMain()
     }
     else if (((nds_header_ntr_t*)TWL_SHARED_MEMORY->ntrSharedMem.romHeader)->arm7EntryAddress == (u32)gLoaderHeader.entryPoint)
     {
+        // IGR: poll for DOWN during a short window after soft reset
+        bool igrRequested = false;
+        for (int i = 0; i < 3000000; i++)
+        {
+            if (!(*(volatile u16*)0x04000130 & 0x80))
+            {
+                igrRequested = true;
+                break;
+            }
+        }
+
         if (igrRequested)
         {
             LOG_DEBUG("IGR: loading launcher\n");

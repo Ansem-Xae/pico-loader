@@ -930,8 +930,6 @@ void NdsLoader::HandleDldiPatching()
 {
     if (_skipDldiPatch)
     {
-        PatchDldiScrambleBits((u32*)_romHeader.arm9LoadAddress, _romHeader.arm9Size);
-        PatchDldiScrambleBits((u32*)_romHeader.arm7LoadAddress, _romHeader.arm7Size);
         return;
     }
 
@@ -956,42 +954,6 @@ void NdsLoader::HandleDldiPatching()
         dldi_header_t* arm7Dldi = (dldi_header_t*)(_romHeader.arm7LoadAddress + arm7DldiAddr);
         LOG_DEBUG("Dldi found in arm7 at address %p\n", arm7Dldi);
         dldi_patchTo(arm7Dldi);
-    }
-}
-
-void NdsLoader::PatchDldiScrambleBits(u32* binary, u32 binarySize)
-{
-    // Find DLDI section in binary
-    int dldiOffset = sDldiStubMatcher.FindFirstOccurance(binary, binarySize >> 2) << 2;
-    if (dldiOffset < 0)
-        return;
-
-    auto dldiHeader = (dldi_header_t*)((u8*)binary + dldiOffset);
-    u32 dldiSize = 1 << dldiHeader->driverSize;
-
-    LOG_DEBUG("Patching DLDI scramble bits at %p, size %d\n", dldiHeader, dldiSize);
-
-    // Exact MCCNT1 literals from compiled DSpico DLDI (with ENABLE bit precomputed)
-    // Scramble bits: CMD_SCRAMBLE(22) | CLOCK_SCRAMBLER(14) | READ_DATA_DESCRAMBLE(13)
-    static const struct { u32 from; u32 to; } table[] = {
-        { 0xA0406000, 0xA0000000 },  // requestSdRead
-        { 0xA7446000, 0xA7040000 },  // pollSdReady
-        { 0xA1444000, 0xA1040000 },  // getSdData
-        { 0xE1486000, 0xE1080000 },  // writeSdData
-    };
-
-    u32* start = (u32*)dldiHeader;
-    u32* end = (u32*)((u8*)dldiHeader + dldiSize);
-    for (u32* p = start; p < end; p++)
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            if (*p == table[i].from)
-            {
-                *p = table[i].to;
-                break;
-            }
-        }
     }
 }
 

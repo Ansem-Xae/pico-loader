@@ -90,7 +90,6 @@ private:
     bool TryLoadArm7();
     bool TryLoadArm7i();
     void HandleDldiPatching();
-    void PatchDldiScrambleBits(u32* binary, u32 binarySize);
     void StartRom(BootMode bootMode);
     void SetupTwlConfig();
     void SetDeviceListEntry(dsi_devicelist_entry_t& deviceListEntry,

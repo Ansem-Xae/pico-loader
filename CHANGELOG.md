@@ -2,8 +2,6 @@
 
 ## [Unreleased]
 
-## [v1.6.0] - 29 Mar 2026
-
 ### Added
 - Support for the SuperChis slot 2 card - by @edo9300
 - Most of the remaining SDK 2-4 DMA patches - by @taxicat1
