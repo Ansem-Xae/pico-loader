@@ -1,6 +1,9 @@
 # Changelog
 
-## [Unreleased]
+###
+Added IGR and Soft Reset, for this to work _picoboot.nds needs to be patched with DSpico.dldi
+
+## [1.6.0]
 
 ### Added
 - Support for the SuperChis slot 2 card - by @edo9300
