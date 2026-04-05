@@ -1,7 +1,7 @@
 # Changelog
 
 ###
-Added IGR and Soft Reset, for this to work _picoboot.nds needs to be patched with DSpico.dldi
+Added IGR and Soft Reset, for this to work _picoboot.nds needs to be patched with DSpico.dldi -by @pheeeeenom
 
 ## [1.6.0]
 
