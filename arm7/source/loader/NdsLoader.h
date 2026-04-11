@@ -50,12 +50,6 @@ public:
         _cheats = cheats;
     }
 
-    /// @brief Skips DLDI patching (for loading ROMs with built-in DLDI).
-    void SetSkipDldiPatch(bool skip)
-    {
-        _skipDldiPatch = skip;
-    }
-
     /// @brief Loads the rom according to the specified \p bootMode.
     /// @param bootMode The boot mode.
     void Load(BootMode bootMode);
@@ -68,7 +62,6 @@ private:
     u32 _argumentsLength = 0;
     const char* _arguments = nullptr;
     pload_cheats_t* _cheats = nullptr;
-    bool _skipDldiPatch = false;
     nds_header_twl_t _romHeader;
     DsiWareSaveResult _dsiwareSaveResult;
 

@@ -41,6 +41,7 @@ typedef struct
     /// @brief The path of the rom to return to when exiting an application.
     ///        When this path is not set, no bootstub will be patched into homebrew applications.
     char launcherPath[256];
+    uint32_t useDonorBinaries; // 1 to enable swapping, 0 for standard load
 } pload_header7_v2_t;
 
 /// @brief Struct representing a single Action Replay cheat opcode.

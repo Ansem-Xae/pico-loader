@@ -34,6 +34,7 @@
 #define PATCH_LIST_PATH   "/_pico/patchlist.bin"
 #define BIOS_NDS7_PATH    "/_pico/biosnds7.rom"
 
+
 typedef void (*entrypoint_t)(void);
 
 static const InverseKmpMatcher sDldiStubMatcher { (const u32[]) { ~0xBF8DA5EDu, ~0x69684320u, ~0x6D6873u } };
@@ -167,6 +168,35 @@ void NdsLoader::Load(BootMode bootMode)
             return;
         }
     }
+
+    // --- START DONOR BINARY INJECTION ---
+    FILINFO fnoDonor;
+    if (f_stat("/_pico/donor_arm9i.bin", &fnoDonor) == FR_OK && 
+        f_stat("/_pico/donor_arm7i.bin", &fnoDonor) == FR_OK) 
+    {
+        LOG_DEBUG("Donor binaries found! Injecting into VRAM...\n");
+        
+        FIL fDonor;
+        UINT bRead;
+
+        // Load ARM9i Donor to VRAM A/B (mapped at 0x06000000 for ARM7)
+        if (f_open(&fDonor, "/_pico/donor_arm9i.bin", FA_READ) == FR_OK) {
+            f_read(&fDonor, (void*)0x06000000, f_size(&fDonor), &bRead);
+            f_close(&fDonor);
+        }
+
+        // Load ARM7i Donor to VRAM C/D (mapped at 0x06040000 for ARM7)
+        if (f_open(&fDonor, "/_pico/donor_arm7i.bin", FA_READ) == FR_OK) {
+            f_read(&fDonor, (void*)0x06040000, f_size(&fDonor), &bRead);
+            f_close(&fDonor);
+        }
+        
+        // Update the shared header flag so the system knows donors are active
+        // Accessing via the shared memory pointer established earlier in the function
+        pload_header7_t* pPicoHeader = (pload_header7_t*)TWL_SHARED_MEMORY->ntrSharedMem.cardRomHeader;
+        pPicoHeader->v2.useDonorBinaries = 1;
+    }
+    // --- END DONOR BINARY INJECTION ---
 
     bool isHomebrew = (_romHeader.makerCode[0] == 0 && _romHeader.makerCode[1] == 0)
         || (_romHeader.arm9AutoLoadDoneHookAddress == 0 && _romHeader.arm7AutoLoadDoneHookAddress == 0)
@@ -707,6 +737,7 @@ void NdsLoader::CreateRomClusterTable()
 
 bool NdsLoader::TryLoadRomHeader(u32 romOffset)
 {
+
     if (f_lseek(&_romFile, romOffset) != FR_OK)
     {
         LOG_FATAL("Failed to seek to header\n");
@@ -786,6 +817,7 @@ void NdsLoader::RemapWram()
 
     LOG_DEBUG("Wram configured\n");
 }
+
 
 bool NdsLoader::TryLoadArm9()
 {
@@ -928,11 +960,6 @@ bool NdsLoader::TryLoadArm7i()
 
 void NdsLoader::HandleDldiPatching()
 {
-    if (_skipDldiPatch)
-    {
-        return;
-    }
-
     if (!ShouldAttemptDldiPatch())
     {
         return;
@@ -959,7 +986,8 @@ void NdsLoader::HandleDldiPatching()
 
 void NdsLoader::StartRom(BootMode bootMode)
 {
-    LOG_DEBUG("Booting...\n");
+  
+  LOG_DEBUG("Booting...\n");
     while (gfx_getVCount() != 191);
     while (gfx_getVCount() == 191);
     sendToArm9(IPC_COMMAND_ARM9_BOOT);
@@ -1112,8 +1140,8 @@ bool NdsLoader::TryDecryptSecureArea()
         f_read(bios7File.get(), keyTable.get(), sizeof(Blowfish::KeyTable), &bytesRead) != FR_OK ||
         bytesRead != sizeof(Blowfish::KeyTable))
     {
-        return false;
-    }
+       return false;
+   } 
 
     auto blowfish = std::make_unique<Blowfish>(keyTable.get());
     blowfish->TransformTable(_romHeader.gameCode, 3, 8);
